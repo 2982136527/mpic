@@ -37,6 +37,18 @@ export function AdminCrawlPage({ config }: Props) {
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<string | null>(null)
   const [logs, setLogs] = useState<CrawlLogEntry[]>([])
+  const [crawlRunning, setCrawlRunning] = useState(config.running || false)
+
+  const fetchStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/crawl')
+      if (!res.ok) return
+      const data = await res.json()
+      setCrawlRunning(data.config.running || false)
+    } catch {
+      // ignore
+    }
+  }, [])
 
   const fetchLogs = useCallback(async () => {
     try {
@@ -49,7 +61,14 @@ export function AdminCrawlPage({ config }: Props) {
     }
   }, [])
 
-  useEffect(() => { fetchLogs() }, [fetchLogs])
+  useEffect(() => {
+    fetchLogs()
+    // Poll status every 5s when running
+    if (crawlRunning) {
+      const timer = setInterval(() => { fetchStatus(); fetchLogs() }, 5000)
+      return () => clearInterval(timer)
+    }
+  }, [fetchLogs, fetchStatus, crawlRunning])
 
   const handleSave = async () => {
     setSaving(true)
@@ -72,6 +91,7 @@ export function AdminCrawlPage({ config }: Props) {
 
   const handleRunNow = async () => {
     setRunning(true)
+    setCrawlRunning(true)
     setRunResult(null)
     try {
       const res = await fetch('/api/admin/crawl/run', { method: 'POST' })
@@ -80,10 +100,12 @@ export function AdminCrawlPage({ config }: Props) {
       const r = data.result
       setRunResult(t.admin.crawlResults(r.fetched, r.duplicates, r.errors))
       fetchLogs()
+      fetchStatus()
     } catch {
       alert(t.common.operationFailed)
     } finally {
       setRunning(false)
+      setCrawlRunning(false)
     }
   }
 
@@ -192,6 +214,23 @@ export function AdminCrawlPage({ config }: Props) {
 
   return (
     <div className='space-y-6'>
+      {/* Status Bar */}
+      <div className='flex items-center gap-3 rounded-2xl border border-white/70 bg-white/60 px-5 py-3 backdrop-blur'>
+        <span className={`inline-block h-2.5 w-2.5 rounded-full ${crawlRunning ? 'animate-pulse bg-green-500' : form.enabled ? 'bg-yellow-500' : 'bg-gray-400'}`} />
+        <span className='text-sm text-[var(--color-ink)]'>
+          {crawlRunning
+            ? t.admin.crawlStatusRunning
+            : form.enabled
+              ? t.admin.crawlStatusEnabled
+              : t.admin.crawlStatusDisabled}
+        </span>
+        {form.enabled && !crawlRunning && form.intervalMinutes > 0 && form.lastRunAt && (
+          <span className='ml-auto text-xs text-[var(--color-ink-soft)]'>
+            {t.admin.crawlStatusNextRun}：{new Date(new Date(form.lastRunAt).getTime() + form.intervalMinutes * 60 * 1000).toLocaleString()}
+          </span>
+        )}
+      </div>
+
       {/* Global Settings */}
       <div className='rounded-2xl border border-white/70 bg-white/60 p-5 backdrop-blur'>
         <h3 className='text-sm font-semibold text-[var(--color-ink)]'>{t.admin.crawlSettings}</h3>

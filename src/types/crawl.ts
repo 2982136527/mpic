@@ -15,6 +15,8 @@ export type CrawlConfig = {
   batchSize: number
   sources: CrawlSource[]
   lastRunAt?: string
+  running?: boolean
+  runningSince?: string
 }
 
 export const DEFAULT_CRAWL_CONFIG: CrawlConfig = {

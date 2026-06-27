@@ -39,6 +39,14 @@ export async function getCrawlLogs(): Promise<CrawlLogEntry[]> {
 export async function runCrawl(force = false): Promise<{ fetched: number; duplicates: number; errors: number }> {
   const config = await getCrawlConfig()
 
+  // Skip if already running (with 10 min timeout safety)
+  if (config.running && config.runningSince) {
+    const runningFor = Date.now() - new Date(config.runningSince).getTime()
+    if (runningFor < 10 * 60 * 1000) {
+      return { fetched: 0, duplicates: 0, errors: 0 }
+    }
+  }
+
   if (!config.enabled && !force) {
     return { fetched: 0, duplicates: 0, errors: 0 }
   }
@@ -55,6 +63,13 @@ export async function runCrawl(force = false): Promise<{ fetched: number; duplic
   if (enabledSources.length === 0) {
     return { fetched: 0, duplicates: 0, errors: 0 }
   }
+
+  // Mark as running
+  const now = new Date().toISOString()
+  await updateJsonWithRetry<CrawlConfig>(CRAWL_CONFIG_PATH, current => {
+    const base = current || { ...DEFAULT_CRAWL_CONFIG, sources: getDefaultSources() }
+    return { ...base, running: true, runningSince: now }
+  })
 
   let fetched = 0
   let duplicates = 0
@@ -86,10 +101,10 @@ export async function runCrawl(force = false): Promise<{ fetched: number; duplic
 
   const duration = Date.now() - startTime
 
-  // Update lastRunAt
+  // Update lastRunAt and clear running flag
   await updateJsonWithRetry<CrawlConfig>(CRAWL_CONFIG_PATH, current => {
     const base = current || { ...DEFAULT_CRAWL_CONFIG, sources: getDefaultSources() }
-    return { ...base, lastRunAt: new Date().toISOString() }
+    return { ...base, lastRunAt: new Date().toISOString(), running: false, runningSince: undefined }
   })
 
   // Append crawl log

@@ -204,6 +204,11 @@ const en = {
     crawlLogSources: 'Sources',
     crawlNoLogs: 'No crawl records',
     crawlIntervalHint: 'Set to 0 for no interval limit, runs on every trigger',
+    crawlStatusRunning: 'Running...',
+    crawlStatusIdle: 'Idle',
+    crawlStatusEnabled: 'Enabled',
+    crawlStatusDisabled: 'Disabled',
+    crawlStatusNextRun: 'Next trigger',
   },
 }
 

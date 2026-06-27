@@ -201,6 +201,11 @@ const zh = {
     crawlLogSources: '数据源',
     crawlNoLogs: '暂无采集记录',
     crawlIntervalHint: '设为 0 表示不限间隔，每次触发都会执行',
+    crawlStatusRunning: '采集中...',
+    crawlStatusIdle: '空闲',
+    crawlStatusEnabled: '已开启',
+    crawlStatusDisabled: '已关闭',
+    crawlStatusNextRun: '下次触发',
   },
 }
 
