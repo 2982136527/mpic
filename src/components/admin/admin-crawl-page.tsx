@@ -70,6 +70,18 @@ export function AdminCrawlPage({ config }: Props) {
     }
   }, [fetchLogs, fetchStatus, crawlRunning])
 
+  // Auto-resume crawl if enabled but not running (e.g. after redeployment)
+  useEffect(() => {
+    if (config.enabled && !config.running) {
+      fetch('/api/admin/crawl/run', { method: 'POST' }).then(() => {
+        setCrawlRunning(true)
+        fetchStatus()
+        fetchLogs()
+      }).catch(() => {})
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const handleSave = async () => {
     setSaving(true)
     setSaved(false)
