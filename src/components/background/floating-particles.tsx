@@ -58,14 +58,14 @@ export function FloatingParticles() {
         if (p.y < -10) p.y = canvas.height + 10
         if (p.y > canvas.height + 10) p.y = -10
 
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
-        ctx.fillStyle = `hsla(${p.hue}, 80%, 75%, ${p.opacity})`
-        ctx.fill()
+        const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 5)
+        gradient.addColorStop(0, `hsla(${p.hue}, 85%, 80%, ${p.opacity})`)
+        gradient.addColorStop(0.3, `hsla(${p.hue}, 80%, 75%, ${p.opacity * 0.5})`)
+        gradient.addColorStop(1, `hsla(${p.hue}, 80%, 75%, 0)`)
 
         ctx.beginPath()
-        ctx.arc(p.x, p.y, p.size * 4, 0, Math.PI * 2)
-        ctx.fillStyle = `hsla(${p.hue}, 80%, 75%, ${p.opacity * 0.2})`
+        ctx.arc(p.x, p.y, p.size * 5, 0, Math.PI * 2)
+        ctx.fillStyle = gradient
         ctx.fill()
       }
 
