@@ -1,13 +1,23 @@
 'use client'
 
 import { useState } from 'react'
+import Masonry from 'react-masonry-css'
 import type { ImageRecord, ImageLinks } from '@/types/image'
 import { ImageCard } from '@/components/gallery/image-card'
 import { ImagePreviewModal } from '@/components/gallery/image-preview-modal'
 import { useLang } from '@/lib/i18n/context'
 
+type ImageWithLinks = ImageRecord & { links: ImageLinks }
+
 type Props = {
-  images: (ImageRecord & { links: ImageLinks })[]
+  images: ImageWithLinks[]
+}
+
+const breakpointColumns = {
+  default: 5,
+  1280: 4,
+  1024: 3,
+  640: 2,
 }
 
 export function ImageGrid({ images }: Props) {
@@ -24,11 +34,14 @@ export function ImageGrid({ images }: Props) {
 
   return (
     <>
-      <div data-image-grid className='columns-2 gap-4 sm:columns-3 lg:columns-4 xl:columns-5'>
+      <Masonry
+        breakpointCols={breakpointColumns}
+        className='my-masonry-grid'
+        columnClassName='my-masonry-grid_column'>
         {images.map((image, i) => (
           <ImageCard key={image.id} image={image} onClick={() => setSelectedIndex(i)} />
         ))}
-      </div>
+      </Masonry>
 
       {selectedIndex !== null && (
         <ImagePreviewModal

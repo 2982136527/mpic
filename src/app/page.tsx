@@ -6,8 +6,7 @@ import { SiteFooter } from '@/components/site-footer'
 import { SearchBar } from '@/components/gallery/search-bar'
 import { TimelineBar } from '@/components/gallery/timeline-bar'
 import { ExifFilters } from '@/components/gallery/exif-filters'
-import { ImageGrid } from '@/components/gallery/image-grid'
-import { GalleryLoadMore } from '@/components/gallery/gallery-load-more'
+import { GalleryContent } from '@/components/gallery/gallery-content'
 import { EmptyState } from '@/components/gallery/empty-state'
 import type { ImageRecord, ImageLinks } from '@/types/image'
 
@@ -83,17 +82,15 @@ export default async function HomePage({ searchParams }: PageProps) {
         {total === 0 ? (
           <EmptyState />
         ) : (
-          <ImageGrid images={images} />
+          <GalleryContent
+            initialImages={images}
+            initialHasMore={hasMore}
+            search={search}
+            yearMonth={yearMonth}
+            camera={camera}
+            lens={lens}
+          />
         )}
-
-        <GalleryLoadMore
-          initialHasMore={hasMore}
-          search={search}
-          initialPage={page}
-          yearMonth={yearMonth}
-          camera={camera}
-          lens={lens}
-        />
       </main>
 
       <SiteFooter />

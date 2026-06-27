@@ -171,3 +171,14 @@ a {
 .animate-stagger-2 { animation-delay: 100ms; }
 .animate-stagger-3 { animation-delay: 150ms; }
 .animate-stagger-4 { animation-delay: 200ms; }
+
+.my-masonry-grid {
+  display: flex;
+  margin-left: -16px;
+  width: auto;
+}
+
+.my-masonry-grid_column {
+  padding-left: 16px;
+  background-clip: padding-box;
+}
