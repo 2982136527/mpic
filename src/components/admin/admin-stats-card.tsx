@@ -1,3 +1,5 @@
+'use client'
+
 import { formatBytes } from '@/lib/utils'
 import { useLang } from '@/lib/i18n/context'
 
