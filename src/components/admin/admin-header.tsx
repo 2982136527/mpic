@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useLang } from '@/lib/i18n/context'
+import { LangToggle } from '@/components/lang-toggle'
 
 export function AdminHeader() {
   const { t } = useLang()
@@ -12,14 +13,17 @@ export function AdminHeader() {
         <p className='text-sm text-[var(--color-ink-soft)]'>{t.admin.pageTitle}</p>
       </div>
 
-      <nav className='flex items-center gap-3 text-sm text-[var(--color-ink-soft)]'>
-        <Link href='/' className='transition hover:text-[var(--color-ink)]'>
-          {t.nav.frontend}
-        </Link>
-        <Link href='/dashboard' className='transition hover:text-[var(--color-ink)]'>
-          {t.nav.dashboard}
-        </Link>
-      </nav>
+      <div className='flex items-center gap-3'>
+        <LangToggle />
+        <nav className='flex items-center gap-3 text-sm text-[var(--color-ink-soft)]'>
+          <Link href='/' className='transition hover:text-[var(--color-ink)]'>
+            {t.nav.frontend}
+          </Link>
+          <Link href='/dashboard' className='transition hover:text-[var(--color-ink)]'>
+            {t.nav.dashboard}
+          </Link>
+        </nav>
+      </div>
     </header>
   )
 }
