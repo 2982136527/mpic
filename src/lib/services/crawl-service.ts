@@ -8,6 +8,7 @@ const CRAWL_CONFIG_PATH = 'data/crawl-config.json'
 const CRAWL_LOGS_PATH = 'data/crawl-logs.json'
 const SYSTEM_LOGIN = 'system'
 const MAX_LOG_ENTRIES = 200
+const CONCURRENCY = 3
 
 export async function getCrawlConfig(): Promise<CrawlConfig> {
   const file = await getJsonFile<CrawlConfig>(CRAWL_CONFIG_PATH)
@@ -36,32 +37,24 @@ export async function getCrawlLogs(): Promise<CrawlLogEntry[]> {
   return file.data.logs.slice(0, 50)
 }
 
-export async function runCrawl(force = false): Promise<{ fetched: number; duplicates: number; errors: number }> {
+export async function runCrawl(force = false): Promise<{ fetched: number; duplicates: number; errors: number; shouldContinue: boolean }> {
   const config = await getCrawlConfig()
 
   // Skip if already running (with 10 min timeout safety)
   if (config.running && config.runningSince) {
     const runningFor = Date.now() - new Date(config.runningSince).getTime()
     if (runningFor < 10 * 60 * 1000) {
-      return { fetched: 0, duplicates: 0, errors: 0 }
+      return { fetched: 0, duplicates: 0, errors: 0, shouldContinue: false }
     }
   }
 
   if (!config.enabled && !force) {
-    return { fetched: 0, duplicates: 0, errors: 0 }
-  }
-
-  // Check interval (skip if forced or interval is 0)
-  if (!force && config.intervalMinutes > 0 && config.lastRunAt) {
-    const elapsed = Date.now() - new Date(config.lastRunAt).getTime()
-    if (elapsed < config.intervalMinutes * 60 * 1000) {
-      return { fetched: 0, duplicates: 0, errors: 0 }
-    }
+    return { fetched: 0, duplicates: 0, errors: 0, shouldContinue: false }
   }
 
   const enabledSources = config.sources.filter(s => s.enabled)
   if (enabledSources.length === 0) {
-    return { fetched: 0, duplicates: 0, errors: 0 }
+    return { fetched: 0, duplicates: 0, errors: 0, shouldContinue: false }
   }
 
   // Mark as running
@@ -77,12 +70,11 @@ export async function runCrawl(force = false): Promise<{ fetched: number; duplic
   const sourceLogs: CrawlLogEntry['sources'] = []
   const startTime = Date.now()
 
-  // Process sources with concurrency limit
-  const CONCURRENCY = 3
+  // Process sources with concurrency limit, 1 image per source
   for (let i = 0; i < enabledSources.length; i += CONCURRENCY) {
     const batch = enabledSources.slice(i, i + CONCURRENCY)
     const results = await Promise.allSettled(
-      batch.map(source => processSource(source, config.batchSize)),
+      batch.map(source => processSource(source)),
     )
     for (let j = 0; j < results.length; j++) {
       const result = results[j]
@@ -93,8 +85,8 @@ export async function runCrawl(force = false): Promise<{ fetched: number; duplic
         errors += result.value.errors
         sourceLogs.push({ name: source.name, ...result.value })
       } else {
-        errors += config.batchSize
-        sourceLogs.push({ name: source.name, fetched: 0, duplicates: 0, errors: config.batchSize })
+        errors++
+        sourceLogs.push({ name: source.name, fetched: 0, duplicates: 0, errors: 1 })
       }
     }
   }
@@ -127,40 +119,28 @@ export async function runCrawl(force = false): Promise<{ fetched: number; duplic
     return index
   })
 
-  return { fetched, duplicates, errors }
+  // Continue if still enabled and got some results
+  const shouldContinue = config.enabled && (fetched > 0 || duplicates > 0)
+
+  return { fetched, duplicates, errors, shouldContinue }
 }
 
-async function processSource(
-  source: CrawlSource,
-  batchSize: number,
-): Promise<{ fetched: number; duplicates: number; errors: number }> {
-  let fetched = 0
-  let duplicates = 0
-  let errors = 0
+async function processSource(source: CrawlSource): Promise<{ fetched: number; duplicates: number; errors: number }> {
+  try {
+    const result = await fetchImage(source)
+    const ext = result.mimeType.split('/')[1] || 'jpg'
+    const filename = `crawl_${source.id}_${Date.now()}.${ext}`
 
-  for (let i = 0; i < batchSize; i++) {
-    try {
-      const result = await fetchImage(source)
-      const ext = result.mimeType.split('/')[1] || 'jpg'
-      const filename = `crawl_${source.id}_${Date.now()}.${ext}`
+    const { isDuplicate } = await uploadImage({
+      buffer: result.buffer,
+      filename,
+      mimeType: result.mimeType,
+      uploaderLogin: SYSTEM_LOGIN,
+      isPublic: true,
+    })
 
-      const { isDuplicate } = await uploadImage({
-        buffer: result.buffer,
-        filename,
-        mimeType: result.mimeType,
-        uploaderLogin: SYSTEM_LOGIN,
-        isPublic: true,
-      })
-
-      if (isDuplicate) {
-        duplicates++
-      } else {
-        fetched++
-      }
-    } catch {
-      errors++
-    }
+    return { fetched: isDuplicate ? 0 : 1, duplicates: isDuplicate ? 1 : 0, errors: 0 }
+  } catch {
+    return { fetched: 0, duplicates: 0, errors: 1 }
   }
-
-  return { fetched, duplicates, errors }
 }

@@ -224,18 +224,11 @@ export function AdminCrawlPage({ config }: Props) {
               ? t.admin.crawlStatusEnabled
               : t.admin.crawlStatusDisabled}
         </span>
-        {form.enabled && !crawlRunning && form.intervalMinutes > 0 && form.lastRunAt && (
-          <span className='ml-auto text-xs text-[var(--color-ink-soft)]'>
-            {t.admin.crawlStatusNextRun}：{new Date(new Date(form.lastRunAt).getTime() + form.intervalMinutes * 60 * 1000).toLocaleString()}
-          </span>
-        )}
       </div>
 
       {/* Global Settings */}
       <div className='rounded-2xl border border-white/70 bg-white/60 p-5 backdrop-blur'>
-        <h3 className='text-sm font-semibold text-[var(--color-ink)]'>{t.admin.crawlSettings}</h3>
-
-        <div className='mt-4 space-y-4'>
+        <div className='space-y-4'>
           <label className='flex items-center gap-2 text-xs text-[var(--color-ink-soft)]'>
             <input
               type='checkbox'
@@ -244,30 +237,6 @@ export function AdminCrawlPage({ config }: Props) {
               className='rounded'
             />
             {t.admin.crawlEnabled}
-          </label>
-
-          <label className='block text-xs text-[var(--color-ink-soft)]'>
-            {t.admin.crawlInterval}
-            <input
-              type='number'
-              value={form.intervalMinutes}
-              onChange={e => setForm(f => ({ ...f, intervalMinutes: Number(e.target.value) }))}
-              min={0}
-              className='mt-1 w-40 rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-2 text-sm text-[var(--color-ink)] outline-none'
-            />
-            <span className='ml-2 text-[10px] text-[var(--color-ink-soft)] opacity-60'>{t.admin.crawlIntervalHint}</span>
-          </label>
-
-          <label className='block text-xs text-[var(--color-ink-soft)]'>
-            {t.admin.crawlBatchSize}
-            <input
-              type='number'
-              value={form.batchSize}
-              onChange={e => setForm(f => ({ ...f, batchSize: Number(e.target.value) }))}
-              min={1}
-              max={50}
-              className='mt-1 w-40 rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-2 text-sm text-[var(--color-ink)] outline-none'
-            />
           </label>
 
           <p className='text-xs text-[var(--color-ink-soft)]'>

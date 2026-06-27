@@ -12,7 +12,16 @@ export async function GET(request: Request) {
 
   try {
     const result = await runCrawl()
-    return NextResponse.json({ ok: true, ...result })
+
+    // Self-trigger next run if there's more to crawl
+    if (result.shouldContinue && cronSecret) {
+      const baseUrl = new URL(request.url).origin
+      fetch(`${baseUrl}/api/cron/crawl`, {
+        headers: { Authorization: `Bearer ${cronSecret}` },
+      }).catch(() => {})
+    }
+
+    return NextResponse.json({ ok: true, fetched: result.fetched, duplicates: result.duplicates, errors: result.errors })
   } catch (error) {
     console.error('[api][cron][crawl]', error)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
