@@ -15,6 +15,7 @@ export function AdminNav() {
     { href: '/admin/users', label: t.admin.userManage },
     { href: '/admin/crawl', label: t.admin.crawlManage },
     { href: '/admin/settings', label: t.admin.settings },
+    { href: '/admin/docs', label: t.admin.docs },
     { href: '/admin/logs', label: t.admin.logs },
   ]
 
