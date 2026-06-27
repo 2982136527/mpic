@@ -44,25 +44,15 @@ export async function POST(request: NextRequest) {
         try {
           const text = await res.text()
           const json = JSON.parse(text)
-          // Try to find an image URL in common paths
-          const imagePaths = ['data.0.urls.original', 'data.0.url', 'data.url', 'imgurl', 'url', 'img', 'image', 'src']
-          let foundPath = ''
-          let foundUrl = ''
-          for (const path of imagePaths) {
-            const val = getNestedValue(json, path)
-            if (typeof val === 'string' && (val.startsWith('http://') || val.startsWith('https://'))) {
-              foundPath = path
-              foundUrl = val
-              break
-            }
-          }
+          // Recursively search for the first image URL in the JSON tree
+          const found = findImageUrl(json, '')
           return ok(requestId, {
             responseType: 'json',
             status: res.status,
             contentType,
             jsonPreview: JSON.stringify(json).slice(0, 500),
-            suggestedPath: foundPath,
-            suggestedUrl: foundUrl,
+            suggestedPath: found?.path || '',
+            suggestedUrl: found?.url || '',
           })
         } catch {
           // Not valid JSON, fall through
@@ -100,9 +90,35 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function getNestedValue(obj: unknown, path: string): unknown {
-  return path.split('.').reduce((cur, key) => {
-    if (cur == null || typeof cur !== 'object') return undefined
-    return (cur as Record<string, unknown>)[key]
-  }, obj)
+const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.svg', '.ico']
+
+function isImageUrl(val: string): boolean {
+  if (!val.startsWith('http://') && !val.startsWith('https://')) return false
+  const lower = val.toLowerCase()
+  return IMAGE_EXTS.some(ext => lower.includes(ext)) || lower.includes('image') || lower.includes('img')
+}
+
+function findImageUrl(obj: unknown, path: string): { path: string; url: string } | null {
+  if (obj == null || typeof obj !== 'object') return null
+
+  if (Array.isArray(obj)) {
+    for (let i = 0; i < obj.length; i++) {
+      const result = findImageUrl(obj[i], path ? `${path}.${i}` : String(i))
+      if (result) return result
+    }
+    return null
+  }
+
+  for (const [key, val] of Object.entries(obj as Record<string, unknown>)) {
+    const currentPath = path ? `${path}.${key}` : key
+    if (typeof val === 'string' && isImageUrl(val)) {
+      return { path: currentPath, url: val }
+    }
+    if (typeof val === 'object' && val !== null) {
+      const result = findImageUrl(val, currentPath)
+      if (result) return result
+    }
+  }
+
+  return null
 }
