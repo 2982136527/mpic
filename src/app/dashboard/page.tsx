@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { getAuthSession } from '@/lib/auth'
 import { getUserStats, listImages, buildImageLinks } from '@/lib/services/image-service'
 import { getUser } from '@/lib/services/user-service'
+import { listAlbums } from '@/lib/services/album-service'
 import { BlurGradientBackground } from '@/components/background/blur-gradient-background'
 import { SiteHeader } from '@/components/site-header'
 import { UserStats } from '@/components/dashboard/user-stats'
@@ -19,11 +20,13 @@ export default async function DashboardPage() {
   const user = await getUser(login)
   const quotaBytes = user?.quotaBytes || 0
 
-  const result = await listImages({ page: 1, pageSize: 50, uploaderLogin: login })
+  const result = await listImages({ page: 1, pageSize: 1000, uploaderLogin: login })
   const images = result.images.map(img => ({
     ...img,
     links: buildImageLinks(img),
   }))
+
+  const albums = await listAlbums(login)
 
   return (
     <div className='relative min-h-screen pb-8' data-theme-scope='public'>
@@ -39,7 +42,7 @@ export default async function DashboardPage() {
         <UserStats imageCount={stats.imageCount} totalSize={stats.totalSize} quotaBytes={quotaBytes} />
 
         <div className='mt-6'>
-          <DashboardContent initialImages={images} />
+          <DashboardContent initialImages={images} initialAlbums={albums} />
         </div>
       </main>
     </div>

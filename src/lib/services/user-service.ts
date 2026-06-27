@@ -1,5 +1,5 @@
 import { getJsonFile, updateJsonWithRetry } from '@/lib/github/client'
-import { DEFAULT_SETTINGS } from '@/types/settings'
+import { getSettings } from '@/lib/services/settings-service'
 import type { UserRecord, UsersIndex } from '@/types/user'
 
 const USERS_PATH = 'data/users.json'
@@ -10,6 +10,7 @@ function emptyIndex(): UsersIndex {
 
 export async function ensureUser(login: string, avatarUrl: string): Promise<UserRecord> {
   let user: UserRecord | undefined
+  const settings = await getSettings()
 
   await updateJsonWithRetry<UsersIndex>(USERS_PATH, current => {
     const index = current || emptyIndex()
@@ -23,7 +24,7 @@ export async function ensureUser(login: string, avatarUrl: string): Promise<User
         login,
         avatarUrl,
         role: 'user',
-        quotaBytes: DEFAULT_SETTINGS.defaultQuotaBytes,
+        quotaBytes: settings.defaultQuotaBytes,
         banned: false,
         imageCount: 0,
         totalSize: 0,

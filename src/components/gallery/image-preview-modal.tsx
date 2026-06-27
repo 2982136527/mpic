@@ -68,7 +68,48 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
           <p className='mb-3 text-sm text-[var(--color-ink)]'>{image.uploaderLogin}</p>
 
           <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>上传时间</p>
-          <p className='mb-4 text-sm text-[var(--color-ink)]'>{new Date(image.createdAt).toLocaleString('zh-CN')}</p>
+          <p className='mb-3 text-sm text-[var(--color-ink)]'>{new Date(image.createdAt).toLocaleString('zh-CN')}</p>
+
+          {image.exif?.shootDate && (
+            <>
+              <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>拍摄时间</p>
+              <p className='mb-3 text-sm text-[var(--color-ink)]'>{new Date(image.exif.shootDate).toLocaleString('zh-CN')}</p>
+            </>
+          )}
+
+          {image.exif?.camera && (
+            <>
+              <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>相机</p>
+              <p className='mb-3 text-sm text-[var(--color-ink)]'>{image.exif.camera}</p>
+            </>
+          )}
+
+          {image.exif?.lens && (
+            <>
+              <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>镜头</p>
+              <p className='mb-3 text-sm text-[var(--color-ink)]'>{image.exif.lens}</p>
+            </>
+          )}
+
+          {(image.exif?.aperture || image.exif?.shutterSpeed || image.exif?.iso || image.exif?.focalLength) && (
+            <>
+              <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>拍摄参数</p>
+              <p className='mb-3 text-sm text-[var(--color-ink)]'>
+                {[image.exif.focalLength, image.exif.aperture, image.exif.shutterSpeed, image.exif.iso && `ISO ${image.exif.iso}`]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+            </>
+          )}
+
+          {image.exif?.location && (
+            <>
+              <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>位置</p>
+              <p className='mb-3 text-sm text-[var(--color-ink)]'>
+                {image.exif.location.lat.toFixed(6)}, {image.exif.location.lng.toFixed(6)}
+              </p>
+            </>
+          )}
 
           <div className='space-y-2'>
             {linkFormats.map(fmt => (

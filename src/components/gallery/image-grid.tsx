@@ -22,7 +22,7 @@ export function ImageGrid({ images }: Props) {
 
   return (
     <>
-      <div className='columns-2 gap-4 sm:columns-3 lg:columns-4'>
+      <div className='columns-2 gap-4 sm:columns-3 lg:columns-4 xl:columns-5'>
         {images.map((image, i) => (
           <ImageCard key={image.id} image={image} onClick={() => setSelectedIndex(i)} />
         ))}

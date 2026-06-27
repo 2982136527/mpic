@@ -6,10 +6,9 @@ import { formatBytes } from '@/lib/utils'
 
 type Props = {
   images: (ImageRecord & { links: ImageLinks })[]
-  onDelete: (id: string) => Promise<void>
 }
 
-export function AdminImagesTable({ images: initialImages, onDelete }: Props) {
+export function AdminImagesTable({ images: initialImages }: Props) {
   const [images, setImages] = useState(initialImages)
   const [deleting, setDeleting] = useState<string | null>(null)
 
@@ -17,7 +16,8 @@ export function AdminImagesTable({ images: initialImages, onDelete }: Props) {
     if (!confirm('确定永久删除这张图片？此操作不可撤销。')) return
     setDeleting(id)
     try {
-      await onDelete(id)
+      const res = await fetch(`/api/admin/image/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Delete failed')
       setImages(prev => prev.filter(img => img.id !== id))
     } catch {
       alert('删除失败')

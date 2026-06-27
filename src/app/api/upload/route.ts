@@ -36,6 +36,10 @@ export async function POST(request: NextRequest) {
       return fail(requestId, 400, 'QUOTA_EXCEEDED', 'Storage quota exceeded')
     }
 
+    const albumId = (formData.get('albumId') as string) || undefined
+    const isPublicRaw = formData.get('isPublic') as string | null
+    const isPublic = isPublicRaw !== null ? isPublicRaw === 'true' : undefined
+
     const buffer = Buffer.from(await file.arrayBuffer())
 
     const { record, isDuplicate } = await uploadImage({
@@ -43,6 +47,8 @@ export async function POST(request: NextRequest) {
       filename: file.name,
       mimeType: file.type,
       uploaderLogin: login,
+      albumId,
+      isPublic,
     })
 
     await appendLog({

@@ -40,16 +40,8 @@ export default async function AdminImagesPage({ searchParams }: PageProps) {
       <AdminImagesActions />
 
       <section className='rounded-2xl border border-white/70 bg-white/60 p-4 backdrop-blur'>
-        <AdminImagesTable images={images} onDelete={adminDeleteImage} />
+        <AdminImagesTable images={images} />
       </section>
     </div>
   )
-}
-
-async function adminDeleteImage(id: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/admin/image/${id}`, {
-    method: 'DELETE',
-    headers: { Cookie: '' },
-  })
-  if (!res.ok) throw new Error('Delete failed')
 }

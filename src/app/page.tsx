@@ -1,9 +1,11 @@
 import { Suspense } from 'react'
-import { listImages, buildImageLinks } from '@/lib/services/image-service'
+import { listImages, buildImageLinks, getTimeline, getExifFilters } from '@/lib/services/image-service'
 import { BlurGradientBackground } from '@/components/background/blur-gradient-background'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { SearchBar } from '@/components/gallery/search-bar'
+import { TimelineBar } from '@/components/gallery/timeline-bar'
+import { ExifFilters } from '@/components/gallery/exif-filters'
 import { ImageGrid } from '@/components/gallery/image-grid'
 import { GalleryLoadMore } from '@/components/gallery/gallery-load-more'
 import type { ImageRecord, ImageLinks } from '@/types/image'
@@ -11,26 +13,40 @@ import type { ImageRecord, ImageLinks } from '@/types/image'
 type ImageWithLinks = ImageRecord & { links: ImageLinks }
 
 type PageProps = {
-  searchParams: Promise<{ search?: string; page?: string }>
+  searchParams: Promise<{ search?: string; page?: string; yearMonth?: string; camera?: string; lens?: string }>
 }
 
 export default async function HomePage({ searchParams }: PageProps) {
   const params = await searchParams
   const search = params.search || ''
   const page = Math.max(1, Number(params.page) || 1)
+  const yearMonth = params.yearMonth || ''
+  const camera = params.camera || ''
+  const lens = params.lens || ''
 
   let images: ImageWithLinks[] = []
   let hasMore = false
   let total = 0
+  let timeline: { yearMonth: string; count: number }[] = []
+  let cameras: { name: string; count: number }[] = []
+  let lenses: { name: string; count: number }[] = []
 
   try {
-    const result = await listImages({ page, pageSize: 30, search })
+    const [result, tl] = await Promise.all([
+      listImages({ page, pageSize: 30, search, publicOnly: true, yearMonth: yearMonth || undefined, camera: camera || undefined, lens: lens || undefined }),
+      getTimeline(true),
+    ])
     images = result.images.map(img => ({
       ...img,
       links: buildImageLinks(img),
     }))
     hasMore = result.hasMore
     total = result.total
+    timeline = tl
+
+    const filters = await getExifFilters(true)
+    cameras = filters.cameras
+    lenses = filters.lenses
   } catch {
     // GitHub env vars not configured or API error
   }
@@ -41,11 +57,23 @@ export default async function HomePage({ searchParams }: PageProps) {
       <SiteHeader />
 
       <main className='mx-auto w-full max-w-6xl px-5 sm:px-8'>
-        <div className='mb-6'>
+        <div className='mb-4'>
           <Suspense>
             <SearchBar />
           </Suspense>
         </div>
+
+        {timeline.length > 0 && (
+          <Suspense>
+            <TimelineBar timeline={timeline} current={yearMonth} />
+          </Suspense>
+        )}
+
+        {(cameras.length > 0 || lenses.length > 0) && (
+          <Suspense>
+            <ExifFilters cameras={cameras} lenses={lenses} currentCamera={camera} currentLens={lens} />
+          </Suspense>
+        )}
 
         {total === 0 ? (
           <div className='rounded-2xl border border-white/70 bg-white/60 py-20 text-center backdrop-blur'>

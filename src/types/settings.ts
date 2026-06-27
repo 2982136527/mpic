@@ -14,7 +14,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   siteName: 'Mpic',
   siteDescription: '多用户公开相册图床',
   cdnBaseUrl: '',
-  maxFileSizeBytes: 10 * 1024 * 1024,
+  maxFileSizeBytes: 5 * 1024 * 1024,
   defaultQuotaBytes: 100 * 1024 * 1024,
   allowRegistration: true,
   enableCompress: true,

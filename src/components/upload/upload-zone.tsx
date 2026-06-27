@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from 'react'
 import type { ImageRecord, ImageLinks } from '@/types/image'
-import { formatBytes } from '@/lib/utils'
+import type { AlbumRecord } from '@/types/album'
 
 type UploadResult = {
   image: ImageRecord
@@ -12,13 +12,24 @@ type UploadResult = {
 
 type Props = {
   onUploaded: (result: UploadResult) => void
+  albums?: AlbumRecord[]
+  selectedAlbumId?: string | null
 }
 
-export function UploadZone({ onUploaded }: Props) {
+export function UploadZone({ onUploaded, albums = [], selectedAlbumId }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isPublic, setIsPublic] = useState(true)
+  const [albumId, setAlbumId] = useState<string>('')
+
+  // If viewing a specific album, auto-assign; otherwise use local selection
+  const effectiveAlbumId = selectedAlbumId || albumId
+
+  const currentAlbumName = effectiveAlbumId
+    ? albums.find(a => a.id === effectiveAlbumId)?.name || '未分组'
+    : '未分组'
 
   const upload = useCallback(
     async (file: File) => {
@@ -28,6 +39,8 @@ export function UploadZone({ onUploaded }: Props) {
       try {
         const formData = new FormData()
         formData.append('file', file)
+        if (effectiveAlbumId) formData.append('albumId', effectiveAlbumId)
+        formData.append('isPublic', String(isPublic))
 
         const res = await fetch('/api/upload', { method: 'POST', body: formData })
         const data = await res.json()
@@ -43,7 +56,7 @@ export function UploadZone({ onUploaded }: Props) {
         setUploading(false)
       }
     },
-    [onUploaded],
+    [onUploaded, effectiveAlbumId, isPublic],
   )
 
   const handleFiles = useCallback(
@@ -69,7 +82,44 @@ export function UploadZone({ onUploaded }: Props) {
   )
 
   return (
-    <div>
+    <div className='space-y-3'>
+      <div className='flex flex-wrap items-center gap-3'>
+        {/* Show album selector only when not viewing a specific album */}
+        {!selectedAlbumId && albums.length > 0 && (
+          <div className='flex items-center gap-2'>
+            <label className='text-xs text-[var(--color-ink-soft)]'>相册</label>
+            <select
+              value={albumId}
+              onChange={e => setAlbumId(e.target.value)}
+              className='rounded-lg border border-[var(--color-border-strong)] bg-white px-2 py-1 text-xs text-[var(--color-ink)] outline-none focus:border-[var(--color-brand)]'>
+              <option value=''>未分组</option>
+              {albums.map(a => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        {/* Show current album when viewing a specific album */}
+        {selectedAlbumId && (
+          <span className='rounded-full bg-[var(--color-brand)]/10 px-2.5 py-0.5 text-xs font-medium text-[var(--color-brand)]'>
+            上传到：{currentAlbumName}
+          </span>
+        )}
+        <div className='flex items-center gap-2'>
+          <label className='text-xs text-[var(--color-ink-soft)]'>可见性</label>
+          <button
+            type='button'
+            onClick={() => setIsPublic(!isPublic)}
+            className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition ${
+              isPublic
+                ? 'bg-green-100 text-green-700'
+                : 'bg-orange-100 text-orange-700'
+            }`}>
+            {isPublic ? '公开' : '隐私'}
+          </button>
+        </div>
+      </div>
+
       <div
         onDragOver={e => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
@@ -99,7 +149,7 @@ export function UploadZone({ onUploaded }: Props) {
         ) : (
           <>
             <p className='text-sm font-medium text-[var(--color-ink)]'>点击选择、拖拽或粘贴图片</p>
-            <p className='mt-1 text-xs text-[var(--color-ink-soft)]'>支持 JPG / PNG / WebP / GIF</p>
+            <p className='mt-1 text-xs text-[var(--color-ink-soft)]'>支持 JPG / PNG / WebP / GIF，超过 5MB 自动压缩</p>
           </>
         )}
       </div>

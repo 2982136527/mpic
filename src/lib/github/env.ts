@@ -17,3 +17,12 @@ export function getImageGithubEnv(): GithubRepoEnv {
 
   return { owner, repo, branch, token }
 }
+
+export function getGithubEnvForRepo(repoName: string): GithubRepoEnv {
+  const base = getImageGithubEnv()
+  return { ...base, repo: repoName }
+}
+
+export function getDefaultRepoName(): string {
+  return process.env.IMAGE_GITHUB_REPO || ''
+}
