@@ -71,54 +71,56 @@ export async function runCrawl(force = false): Promise<{ fetched: number; duplic
   const sourceLogs: CrawlLogEntry['sources'] = []
   const startTime = Date.now()
 
-  // Process sources with concurrency limit, 1 image per source
-  for (let i = 0; i < enabledSources.length; i += CONCURRENCY) {
-    const batch = enabledSources.slice(i, i + CONCURRENCY)
-    const results = await Promise.allSettled(
-      batch.map(source => processSource(source, BATCH_SIZE)),
-    )
-    for (let j = 0; j < results.length; j++) {
-      const result = results[j]
-      const source = batch[j]
-      if (result.status === 'fulfilled') {
-        fetched += result.value.fetched
-        duplicates += result.value.duplicates
-        errors += result.value.errors
-        sourceLogs.push({ name: source.name, ...result.value })
-      } else {
-        errors++
-        sourceLogs.push({ name: source.name, fetched: 0, duplicates: 0, errors: 1 })
+  try {
+    // Process sources with concurrency limit, 5 images per source
+    for (let i = 0; i < enabledSources.length; i += CONCURRENCY) {
+      const batch = enabledSources.slice(i, i + CONCURRENCY)
+      const results = await Promise.allSettled(
+        batch.map(source => processSource(source, BATCH_SIZE)),
+      )
+      for (let j = 0; j < results.length; j++) {
+        const result = results[j]
+        const source = batch[j]
+        if (result.status === 'fulfilled') {
+          fetched += result.value.fetched
+          duplicates += result.value.duplicates
+          errors += result.value.errors
+          sourceLogs.push({ name: source.name, ...result.value })
+        } else {
+          errors++
+          sourceLogs.push({ name: source.name, fetched: 0, duplicates: 0, errors: 1 })
+        }
       }
     }
-  }
+  } finally {
+    const duration = Date.now() - startTime
 
-  const duration = Date.now() - startTime
+    // Always clear running flag, even on error
+    await updateJsonWithRetry<CrawlConfig>(CRAWL_CONFIG_PATH, current => {
+      const base = current || { ...DEFAULT_CRAWL_CONFIG, sources: getDefaultSources() }
+      return { ...base, lastRunAt: new Date().toISOString(), running: false, runningSince: undefined }
+    }).catch(() => {})
 
-  // Update lastRunAt and clear running flag
-  await updateJsonWithRetry<CrawlConfig>(CRAWL_CONFIG_PATH, current => {
-    const base = current || { ...DEFAULT_CRAWL_CONFIG, sources: getDefaultSources() }
-    return { ...base, lastRunAt: new Date().toISOString(), running: false, runningSince: undefined }
-  })
-
-  // Append crawl log
-  const logEntry: CrawlLogEntry = {
-    id: crypto.randomUUID().slice(0, 8),
-    startedAt: new Date(startTime).toISOString(),
-    duration,
-    fetched,
-    duplicates,
-    errors,
-    sources: sourceLogs,
-  }
-
-  await updateJsonWithRetry<CrawlLogsIndex>(CRAWL_LOGS_PATH, current => {
-    const index = current || { version: 1, logs: [] }
-    index.logs.unshift(logEntry)
-    if (index.logs.length > MAX_LOG_ENTRIES) {
-      index.logs = index.logs.slice(0, MAX_LOG_ENTRIES)
+    // Append crawl log
+    const logEntry: CrawlLogEntry = {
+      id: crypto.randomUUID().slice(0, 8),
+      startedAt: new Date(startTime).toISOString(),
+      duration,
+      fetched,
+      duplicates,
+      errors,
+      sources: sourceLogs,
     }
-    return index
-  })
+
+    await updateJsonWithRetry<CrawlLogsIndex>(CRAWL_LOGS_PATH, current => {
+      const index = current || { version: 1, logs: [] }
+      index.logs.unshift(logEntry)
+      if (index.logs.length > MAX_LOG_ENTRIES) {
+        index.logs = index.logs.slice(0, MAX_LOG_ENTRIES)
+      }
+      return index
+    }).catch(() => {})
+  }
 
   // Continue if still enabled
   return { fetched, duplicates, errors, shouldContinue: config.enabled }
