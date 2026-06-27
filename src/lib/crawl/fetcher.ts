@@ -35,12 +35,35 @@ async function fetchBuffer(url: string): Promise<{ buffer: Buffer; mimeType: str
   try {
     const res = await fetch(url, { signal: controller.signal, headers: { 'User-Agent': 'MPic-Crawler/1.0' } })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const arrayBuf = await res.arrayBuffer()
     const contentType = res.headers.get('content-type') || ''
-    return { buffer: Buffer.from(arrayBuf), mimeType: guessMimeType(url, contentType) }
+    // Reject non-image responses
+    if (contentType.includes('text/html') || contentType.includes('application/json')) {
+      throw new Error(`Not an image: ${contentType}`)
+    }
+    const arrayBuf = await res.arrayBuffer()
+    const buffer = Buffer.from(arrayBuf)
+    // Verify image magic bytes
+    if (!isImageBuffer(buffer)) {
+      throw new Error('Not a valid image (bad magic bytes)')
+    }
+    return { buffer, mimeType: guessMimeType(url, contentType) }
   } finally {
     clearTimeout(timer)
   }
+}
+
+function isImageBuffer(buf: Buffer): boolean {
+  if (buf.length < 4) return false
+  // JPEG: FF D8 FF
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return true
+  // PNG: 89 50 4E 47
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return true
+  // GIF: 47 49 46 38
+  if (buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x38) return true
+  // WebP: RIFF....WEBP
+  if (buf.length >= 12 && buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46 &&
+      buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50) return true
+  return false
 }
 
 async function resolveRedirect(source: CrawlSource): Promise<FetchResult> {

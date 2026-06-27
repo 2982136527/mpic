@@ -8,7 +8,7 @@ const CRAWL_CONFIG_PATH = 'data/crawl-config.json'
 const CRAWL_LOGS_PATH = 'data/crawl-logs.json'
 const SYSTEM_LOGIN = 'system'
 const MAX_LOG_ENTRIES = 200
-const CONCURRENCY = 3
+const CONCURRENCY = 6
 const BATCH_SIZE = 5
 
 export async function getCrawlConfig(): Promise<CrawlConfig> {
