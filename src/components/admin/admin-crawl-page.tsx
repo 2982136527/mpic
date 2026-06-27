@@ -34,6 +34,8 @@ export function AdminCrawlPage({ config }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [sourceForm, setSourceForm] = useState<SourceFormState>(EMPTY_SOURCE_FORM)
   const [showForm, setShowForm] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [testResult, setTestResult] = useState<string | null>(null)
 
   const handleSave = async () => {
     setSaving(true)
@@ -132,6 +134,42 @@ export function AdminCrawlPage({ config }: Props) {
   const deleteSource = (id: string) => {
     if (!confirm(t.admin.crawlConfirmDelete)) return
     setForm(f => ({ ...f, sources: f.sources.filter(s => s.id !== id) }))
+  }
+
+  const handleTest = async () => {
+    if (!sourceForm.url) return
+    setTesting(true)
+    setTestResult(null)
+    try {
+      const res = await fetch('/api/admin/crawl/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: sourceForm.url }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error?.message || 'Test failed')
+
+      const r = data
+      setSourceForm(f => ({
+        ...f,
+        responseType: r.responseType === 'unknown' ? f.responseType : r.responseType,
+        jsonPath: r.suggestedPath || f.jsonPath,
+      }))
+
+      const info = [
+        `类型: ${r.responseType}`,
+        `状态码: ${r.status}`,
+        r.contentType ? `Content-Type: ${r.contentType}` : '',
+        r.location ? `跳转: ${r.location}` : '',
+        r.suggestedPath ? `JSON路径: ${r.suggestedPath}` : '',
+        r.suggestedUrl ? `图片URL: ${r.suggestedUrl}` : '',
+      ].filter(Boolean).join(' | ')
+      setTestResult(info)
+    } catch (err) {
+      setTestResult(`失败: ${err instanceof Error ? err.message : '未知错误'}`)
+    } finally {
+      setTesting(false)
+    }
   }
 
   const animeSources = form.sources.filter(s => s.category === 'anime')
@@ -238,6 +276,16 @@ export function AdminCrawlPage({ config }: Props) {
               placeholder={t.admin.crawlUrlPlaceholder}
               className='w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-2 text-sm text-[var(--color-ink)] outline-none'
             />
+            <div className='flex items-center gap-2'>
+              <button
+                type='button'
+                onClick={handleTest}
+                disabled={testing || !sourceForm.url}
+                className='rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-2 text-xs text-[var(--color-ink-soft)] transition hover:text-[var(--color-ink)] disabled:opacity-50'>
+                {testing ? '...' : '探测'}
+              </button>
+              {testResult && <span className='text-xs text-[var(--color-ink-soft)]'>{testResult}</span>}
+            </div>
             <div className='flex gap-3'>
               <select
                 value={sourceForm.category}
