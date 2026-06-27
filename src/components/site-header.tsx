@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { UserMenu } from '@/components/auth/user-menu'
+import { LangToggle } from '@/components/lang-toggle'
+import { SiteDesc } from '@/components/site-desc'
 
 export function SiteHeader() {
   return (
@@ -8,10 +10,11 @@ export function SiteHeader() {
         <Link href='/' className='font-title text-3xl leading-none tracking-tight text-[var(--color-ink)] transition hover:text-[var(--color-brand)]'>
           Mpic
         </Link>
-        <p className='mt-1 text-sm text-[var(--color-ink-soft)]'>公开相册图床</p>
+        <SiteDesc />
       </div>
 
       <div className='flex items-center gap-3'>
+        <LangToggle />
         <UserMenu />
       </div>
     </header>

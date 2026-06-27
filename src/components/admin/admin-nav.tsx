@@ -3,17 +3,19 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-
-const links = [
-  { href: '/admin', label: '仪表盘' },
-  { href: '/admin/images', label: '图片管理' },
-  { href: '/admin/users', label: '用户管理' },
-  { href: '/admin/settings', label: '系统设置' },
-  { href: '/admin/logs', label: '操作日志' },
-]
+import { useLang } from '@/lib/i18n/context'
 
 export function AdminNav() {
   const pathname = usePathname()
+  const { t } = useLang()
+
+  const links = [
+    { href: '/admin', label: t.admin.dashboard },
+    { href: '/admin/images', label: t.admin.imageManage },
+    { href: '/admin/users', label: t.admin.userManage },
+    { href: '/admin/settings', label: t.admin.settings },
+    { href: '/admin/logs', label: t.admin.logs },
+  ]
 
   return (
     <nav className='flex flex-wrap gap-2'>

@@ -3,6 +3,7 @@ import { getAuthSession } from '@/lib/auth'
 import { isAdminLogin } from '@/lib/api/permissions'
 import { getSettings } from '@/lib/services/settings-service'
 import { AdminSettingsPage } from '@/components/admin/admin-settings-page'
+import { AdminNoPermission } from '@/components/admin/admin-no-permission'
 
 export default async function AdminSettingsPageServer() {
   const session = await getAuthSession()
@@ -12,7 +13,7 @@ export default async function AdminSettingsPageServer() {
   }
 
   if (!isAdminLogin(session.user.login)) {
-    return <div className='rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700'>无管理员权限。</div>
+    return <AdminNoPermission />
   }
 
   const settings = await getSettings()

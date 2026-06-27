@@ -3,6 +3,8 @@ import { getAuthSession } from '@/lib/auth'
 import { isAdminLogin } from '@/lib/api/permissions'
 import { listLogs } from '@/lib/services/log-service'
 import { AdminLogsTable } from '@/components/admin/admin-logs-table'
+import { AdminNoPermission } from '@/components/admin/admin-no-permission'
+import { AdminLogsHeader } from '@/components/admin/admin-logs-header'
 
 type PageProps = {
   searchParams: Promise<{ page?: string }>
@@ -16,7 +18,7 @@ export default async function AdminLogsPage({ searchParams }: PageProps) {
   }
 
   if (!isAdminLogin(session.user.login)) {
-    return <div className='rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700'>无管理员权限。</div>
+    return <AdminNoPermission />
   }
 
   const params = await searchParams
@@ -25,10 +27,7 @@ export default async function AdminLogsPage({ searchParams }: PageProps) {
 
   return (
     <div className='space-y-5'>
-      <section className='rounded-2xl border border-white/70 bg-white/60 p-4 backdrop-blur'>
-        <h2 className='font-title text-3xl text-[var(--color-ink)]'>操作日志</h2>
-        <p className='text-sm text-[var(--color-ink-soft)]'>共 {result.total} 条记录</p>
-      </section>
+      <AdminLogsHeader total={result.total} />
 
       <section className='rounded-2xl border border-white/70 bg-white/60 p-4 backdrop-blur'>
         <AdminLogsTable logs={result.logs} />

@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from 'react'
 import type { ImageRecord, ImageLinks } from '@/types/image'
+import { useLang } from '@/lib/i18n/context'
 
 type Props = {
   initialHasMore: boolean
@@ -12,6 +13,7 @@ type Props = {
 export function GalleryLoadMore({ initialHasMore, search, initialPage }: Props) {
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(initialHasMore)
+  const { t } = useLang()
   const [currentPage, setCurrentPage] = useState(initialPage)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
@@ -80,7 +82,7 @@ export function GalleryLoadMore({ initialHasMore, search, initialPage }: Props) 
       {loading && (
         <div className='inline-flex items-center gap-2 text-sm text-[var(--color-ink-soft)]'>
           <div className='h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-brand)] border-t-transparent' />
-          加载中...
+          {t.common.loading}
         </div>
       )}
     </div>

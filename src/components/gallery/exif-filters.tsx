@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useLang } from '@/lib/i18n/context'
 
 type FilterItem = { name: string; count: number }
 
@@ -14,12 +15,14 @@ type Props = {
 
 function FilterDropdown({
   label,
+  allLabel,
   icon,
   items,
   current,
   paramKey,
 }: {
   label: string
+  allLabel: string
   icon: React.ReactNode
   items: FilterItem[]
   current: string
@@ -29,6 +32,7 @@ function FilterDropdown({
   const searchParams = useSearchParams()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const { t } = useLang()
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -50,7 +54,7 @@ function FilterDropdown({
     setOpen(false)
   }
 
-  const currentLabel = current || `全部${label}`
+  const currentLabel = current || allLabel
   const currentCount = current
     ? items.find(i => i.name === current)?.count || 0
     : items.reduce((s, i) => s + i.count, 0)
@@ -63,7 +67,7 @@ function FilterDropdown({
         className='flex items-center gap-2 rounded-xl border border-[var(--color-border-strong)] bg-white/80 px-4 py-2 text-sm font-medium text-[var(--color-ink)] shadow-sm transition hover:border-[var(--color-brand)] hover:shadow-md'>
         {icon}
         {currentLabel}
-        <span className='text-xs text-[var(--color-ink-soft)]'>{currentCount} 张</span>
+        <span className='text-xs text-[var(--color-ink-soft)]'>{currentCount} {t.gallery.countImages}</span>
         <svg className={`ml-1 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2.5' strokeLinecap='round' strokeLinejoin='round'>
           <polyline points='6 9 12 15 18 9' />
         </svg>
@@ -80,7 +84,7 @@ function FilterDropdown({
               className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition hover:bg-[var(--color-brand)]/10 ${
                 !current ? 'bg-[var(--color-brand)]/10 font-medium text-[var(--color-brand)]' : 'text-[var(--color-ink)]'
               }`}>
-              <span>全部{label}</span>
+              <span>{allLabel}</span>
               <span className='text-xs text-[var(--color-ink-soft)]'>{items.reduce((s, i) => s + i.count, 0)}</span>
             </button>
 
@@ -105,13 +109,15 @@ function FilterDropdown({
 }
 
 export function ExifFilters({ cameras, lenses, currentCamera, currentLens }: Props) {
+  const { t } = useLang()
   if (cameras.length === 0 && lenses.length === 0) return null
 
   return (
     <div className='mb-4 flex flex-wrap gap-3'>
       {cameras.length > 0 && (
         <FilterDropdown
-          label='相机'
+          label={t.gallery.camera}
+          allLabel={`${t.common.all}${t.gallery.camera}`}
           icon={
             <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'>
               <path d='M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z' />
@@ -126,7 +132,8 @@ export function ExifFilters({ cameras, lenses, currentCamera, currentLens }: Pro
 
       {lenses.length > 0 && (
         <FilterDropdown
-          label='镜头'
+          label={t.gallery.lens}
+          allLabel={`${t.common.all}${t.gallery.lens}`}
           icon={
             <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'>
               <circle cx='12' cy='12' r='10' />

@@ -7,6 +7,7 @@ import { BlurGradientBackground } from '@/components/background/blur-gradient-ba
 import { SiteHeader } from '@/components/site-header'
 import { UserStats } from '@/components/dashboard/user-stats'
 import { DashboardContent } from '@/components/dashboard/dashboard-content'
+import { DashboardTitle } from '@/components/dashboard/dashboard-title'
 
 export default async function DashboardPage() {
   const session = await getAuthSession()
@@ -34,10 +35,7 @@ export default async function DashboardPage() {
       <SiteHeader />
 
       <main className='mx-auto w-full max-w-6xl px-5 sm:px-8'>
-        <div className='mb-6'>
-          <h2 className='font-title text-3xl text-[var(--color-ink)]'>个人中心</h2>
-          <p className='mt-1 text-sm text-[var(--color-ink-soft)]'>@{login}</p>
-        </div>
+        <DashboardTitle login={login} />
 
         <UserStats imageCount={stats.imageCount} totalSize={stats.totalSize} quotaBytes={quotaBytes} />
 

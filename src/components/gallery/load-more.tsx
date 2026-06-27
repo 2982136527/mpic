@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useLang } from '@/lib/i18n/context'
 
 type Props = {
   hasMore: boolean
@@ -10,6 +11,7 @@ type Props = {
 
 export function LoadMore({ hasMore, loading, onLoadMore }: Props) {
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const { t } = useLang()
 
   useEffect(() => {
     if (!hasMore || loading) return
@@ -35,7 +37,7 @@ export function LoadMore({ hasMore, loading, onLoadMore }: Props) {
       {loading && (
         <div className='inline-flex items-center gap-2 text-sm text-[var(--color-ink-soft)]'>
           <div className='h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-brand)] border-t-transparent' />
-          加载中...
+          {t.common.loading}
         </div>
       )}
     </div>

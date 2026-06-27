@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { ImageRecord, ImageLinks } from '@/types/image'
 import type { AlbumRecord } from '@/types/album'
 import { formatBytes } from '@/lib/utils'
+import { useLang } from '@/lib/i18n/context'
 
 type Props = {
   images: (ImageRecord & { links: ImageLinks })[]
@@ -17,14 +18,15 @@ export function MyImagesList({ images, albums = [], onDelete, onTogglePrivacy, o
   const [deleting, setDeleting] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
   const [movingAlbum, setMovingAlbum] = useState<string | null>(null)
+  const { t, lang } = useLang()
 
   const handleDelete = async (id: string) => {
-    if (!confirm('确定删除这张图片？')) return
+    if (!confirm(t.dashboard.confirmDelete)) return
     setDeleting(id)
     try {
       await onDelete(id)
     } catch {
-      alert('删除失败')
+      alert(t.dashboard.deleteFailed)
     } finally {
       setDeleting(null)
     }
@@ -49,13 +51,15 @@ export function MyImagesList({ images, albums = [], onDelete, onTogglePrivacy, o
   }
 
   const getAlbumName = (albumId?: string) => {
-    if (!albumId) return '未分组'
-    return albums.find(a => a.id === albumId)?.name || '未知相册'
+    if (!albumId) return t.common.ungrouped
+    return albums.find(a => a.id === albumId)?.name || t.dashboard.unknownAlbum
   }
 
   if (images.length === 0) {
-    return <p className='py-8 text-center text-sm text-[var(--color-ink-soft)]'>暂无上传记录</p>
+    return <p className='py-8 text-center text-sm text-[var(--color-ink-soft)]'>{t.dashboard.noUploads}</p>
   }
+
+  const locale = lang === 'zh' ? 'zh-CN' : 'en-US'
 
   return (
     <div className='space-y-2'>
@@ -70,11 +74,11 @@ export function MyImagesList({ images, albums = [], onDelete, onTogglePrivacy, o
                   ? 'bg-green-100 text-green-700'
                   : 'bg-orange-100 text-orange-700'
               }`}>
-                {image.isPublic !== false ? '公开' : '隐私'}
+                {image.isPublic !== false ? t.common.publicLabel : t.common.privateLabel}
               </span>
             </div>
             <p className='text-xs text-[var(--color-ink-soft)]'>
-              {formatBytes(image.size)} · {new Date(image.createdAt).toLocaleDateString('zh-CN')}
+              {formatBytes(image.size)} · {new Date(image.createdAt).toLocaleDateString(locale)}
               {image.albumId && ` · ${getAlbumName(image.albumId)}`}
             </p>
           </div>
@@ -88,7 +92,7 @@ export function MyImagesList({ images, albums = [], onDelete, onTogglePrivacy, o
                     ? 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100'
                     : 'border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100'
                 }`}>
-                {image.isPublic !== false ? '设为隐私' : '设为公开'}
+                {image.isPublic !== false ? t.common.setPrivate : t.common.setPublic}
               </button>
             )}
             {onMoveToAlbum && (
@@ -97,7 +101,7 @@ export function MyImagesList({ images, albums = [], onDelete, onTogglePrivacy, o
                   type='button'
                   onClick={() => setMovingAlbum(movingAlbum === image.id ? null : image.id)}
                   className='rounded-lg border border-[var(--color-border-strong)] bg-white px-2 py-1 text-xs text-[var(--color-ink)] transition hover:border-[var(--color-brand)]'>
-                  移动
+                  {t.common.move}
                 </button>
                 {movingAlbum === image.id && (
                   <div className='absolute right-0 top-full z-10 mt-1 w-36 rounded-xl border border-[var(--glass-border)] bg-white p-1 shadow-lg'>
@@ -105,7 +109,7 @@ export function MyImagesList({ images, albums = [], onDelete, onTogglePrivacy, o
                       type='button'
                       onClick={() => handleMoveToAlbum(image.id, null)}
                       className='w-full rounded-lg px-2 py-1 text-left text-xs text-[var(--color-ink)] hover:bg-gray-100'>
-                      未分组
+                      {t.common.ungrouped}
                     </button>
                     {albums.map(a => (
                       <button
@@ -124,14 +128,14 @@ export function MyImagesList({ images, albums = [], onDelete, onTogglePrivacy, o
               type='button'
               onClick={() => handleCopy(image.links.cdn, image.id)}
               className='rounded-lg border border-[var(--color-border-strong)] bg-white px-2 py-1 text-xs text-[var(--color-ink)] transition hover:border-[var(--color-brand)]'>
-              {copied === image.id ? '已复制' : '复制链接'}
+              {copied === image.id ? t.common.copied : t.common.copyLink}
             </button>
             <button
               type='button'
               disabled={deleting === image.id}
               onClick={() => handleDelete(image.id)}
               className='rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-600 transition hover:bg-red-100 disabled:opacity-50'>
-              {deleting === image.id ? '删除中' : '删除'}
+              {deleting === image.id ? t.common.deleting : t.common.delete}
             </button>
           </div>
         </div>

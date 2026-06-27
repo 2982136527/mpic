@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { UserRecord } from '@/types/user'
 import { formatBytes } from '@/lib/utils'
+import { useLang } from '@/lib/i18n/context'
 
 type Props = {
   users: UserRecord[]
@@ -10,6 +11,7 @@ type Props = {
 }
 
 export function AdminUsersTable({ users: initialUsers, onUpdate }: Props) {
+  const { t } = useLang()
   const [users, setUsers] = useState(initialUsers)
   const [updating, setUpdating] = useState<string | null>(null)
 
@@ -19,7 +21,7 @@ export function AdminUsersTable({ users: initialUsers, onUpdate }: Props) {
       await onUpdate(user.login, { banned: !user.banned })
       setUsers(prev => prev.map(u => u.login === user.login ? { ...u, banned: !u.banned } : u))
     } catch {
-      alert('操作失败')
+      alert(t.common.operationFailed)
     } finally {
       setUpdating(null)
     }
@@ -27,13 +29,13 @@ export function AdminUsersTable({ users: initialUsers, onUpdate }: Props) {
 
   const handleToggleRole = async (user: UserRecord) => {
     const newRole = user.role === 'admin' ? 'user' : 'admin'
-    if (!confirm(`确定将 ${user.login} 设为${newRole === 'admin' ? '管理员' : '普通用户'}？`)) return
+    if (!confirm(t.admin.roleConfirm(user.login, newRole === 'admin' ? t.admin.adminRole : t.admin.userRole))) return
     setUpdating(user.login)
     try {
       await onUpdate(user.login, { role: newRole })
       setUsers(prev => prev.map(u => u.login === user.login ? { ...u, role: newRole } : u))
     } catch {
-      alert('操作失败')
+      alert(t.common.operationFailed)
     } finally {
       setUpdating(null)
     }
@@ -44,13 +46,13 @@ export function AdminUsersTable({ users: initialUsers, onUpdate }: Props) {
       <table className='min-w-full text-left text-sm'>
         <thead className='text-xs text-[var(--color-ink-soft)]'>
           <tr>
-            <th className='px-3 py-2'>用户</th>
-            <th className='px-3 py-2'>角色</th>
-            <th className='px-3 py-2'>状态</th>
-            <th className='px-3 py-2'>图片</th>
-            <th className='px-3 py-2'>存储</th>
-            <th className='px-3 py-2'>配额</th>
-            <th className='px-3 py-2'>操作</th>
+            <th className='px-3 py-2'>{t.admin.uploader}</th>
+            <th className='px-3 py-2'>{t.admin.role}</th>
+            <th className='px-3 py-2'>{t.admin.status}</th>
+            <th className='px-3 py-2'>{t.admin.images}</th>
+            <th className='px-3 py-2'>{t.admin.storage}</th>
+            <th className='px-3 py-2'>{t.admin.quota}</th>
+            <th className='px-3 py-2'>{t.admin.action}</th>
           </tr>
         </thead>
         <tbody>
@@ -64,12 +66,12 @@ export function AdminUsersTable({ users: initialUsers, onUpdate }: Props) {
               </td>
               <td className='px-3 py-2'>
                 <span className={`rounded-full px-2 py-0.5 text-xs ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'}`}>
-                  {user.role === 'admin' ? '管理员' : '用户'}
+                  {user.role === 'admin' ? t.admin.adminRole : t.admin.userRole}
                 </span>
               </td>
               <td className='px-3 py-2'>
                 <span className={`rounded-full px-2 py-0.5 text-xs ${user.banned ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                  {user.banned ? '已封禁' : '正常'}
+                  {user.banned ? t.admin.banned : t.admin.normal}
                 </span>
               </td>
               <td className='px-3 py-2 text-[var(--color-ink-soft)]'>{user.imageCount}</td>
@@ -82,7 +84,7 @@ export function AdminUsersTable({ users: initialUsers, onUpdate }: Props) {
                     disabled={updating === user.login}
                     onClick={() => handleToggleRole(user)}
                     className='rounded-lg border border-[var(--color-border-strong)] bg-white px-2 py-1 text-xs text-[var(--color-ink)] transition hover:border-[var(--color-brand)] disabled:opacity-50'>
-                    {user.role === 'admin' ? '取消管理' : '设为管理'}
+                    {user.role === 'admin' ? t.admin.revokeAdmin : t.admin.setAdmin}
                   </button>
                   <button
                     type='button'
@@ -93,7 +95,7 @@ export function AdminUsersTable({ users: initialUsers, onUpdate }: Props) {
                         ? 'border border-green-200 bg-green-50 text-green-700 hover:bg-green-100'
                         : 'border border-red-200 bg-red-50 text-red-600 hover:bg-red-100'
                     }`}>
-                    {user.banned ? '解封' : '封禁'}
+                    {user.banned ? t.admin.unban : t.admin.ban}
                   </button>
                 </div>
               </td>

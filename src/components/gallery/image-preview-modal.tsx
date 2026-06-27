@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import type { ImageRecord, ImageLinks } from '@/types/image'
 import { formatBytes } from '@/lib/utils'
+import { useLang } from '@/lib/i18n/context'
 
 type Props = {
   images: (ImageRecord & { links: ImageLinks })[]
@@ -15,6 +16,7 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
   const image = images[index]
   const [copied, setCopied] = useState<string | null>(null)
   const [entering, setEntering] = useState(false)
+  const { t, lang } = useLang()
 
   const copyToClipboard = useCallback(async (text: string, label: string) => {
     await navigator.clipboard.writeText(text)
@@ -36,10 +38,12 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
     return () => document.removeEventListener('keydown', handleKey)
   }, [index, images.length, onClose, onNavigate])
 
+  const locale = lang === 'zh' ? 'zh-CN' : 'en-US'
+
   const linkFormats = [
-    { label: 'CDN 加速', value: image.links.cdn },
-    { label: '原始链接', value: image.links.raw },
-    ...(image.links.customCdn ? [{ label: '自定义 CDN', value: image.links.customCdn }] : []),
+    { label: t.gallery.cdn, value: image.links.cdn },
+    { label: t.gallery.original, value: image.links.raw },
+    ...(image.links.customCdn ? [{ label: t.gallery.customCdn, value: image.links.customCdn }] : []),
     { label: 'Markdown', value: image.links.markdown },
   ]
 
@@ -75,49 +79,49 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
 
         <div className='w-full overflow-y-auto p-5 md:w-80'>
           <div className='mb-4 flex items-start justify-between'>
-            <h3 className='text-sm font-semibold text-[var(--color-ink)]'>图片详情</h3>
+            <h3 className='text-sm font-semibold text-[var(--color-ink)]'>{t.gallery.imageDetails}</h3>
             <button type='button' onClick={onClose} className='text-xl text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] transition'>&times;</button>
           </div>
 
-          <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>文件名</p>
+          <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>{t.gallery.filename}</p>
           <p className='mb-3 break-all text-sm text-[var(--color-ink)]'>{image.filename}</p>
 
-          <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>信息</p>
+          <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>{t.gallery.info}</p>
           <p className='mb-3 text-sm text-[var(--color-ink)]'>
             {formatBytes(image.size)}
             {image.width && image.height && ` · ${image.width}×${image.height}`}
           </p>
 
-          <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>上传者</p>
+          <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>{t.gallery.uploader}</p>
           <p className='mb-3 text-sm text-[var(--color-ink)]'>{image.uploaderLogin}</p>
 
-          <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>上传时间</p>
-          <p className='mb-3 text-sm text-[var(--color-ink)]'>{new Date(image.createdAt).toLocaleString('zh-CN')}</p>
+          <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>{t.gallery.uploadTime}</p>
+          <p className='mb-3 text-sm text-[var(--color-ink)]'>{new Date(image.createdAt).toLocaleString(locale)}</p>
 
           {image.exif?.shootDate && (
             <>
-              <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>拍摄时间</p>
-              <p className='mb-3 text-sm text-[var(--color-ink)]'>{new Date(image.exif.shootDate).toLocaleString('zh-CN')}</p>
+              <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>{t.gallery.takenTime}</p>
+              <p className='mb-3 text-sm text-[var(--color-ink)]'>{new Date(image.exif.shootDate).toLocaleString(locale)}</p>
             </>
           )}
 
           {image.exif?.camera && (
             <>
-              <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>相机</p>
+              <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>{t.gallery.camera}</p>
               <p className='mb-3 text-sm text-[var(--color-ink)]'>{image.exif.camera}</p>
             </>
           )}
 
           {image.exif?.lens && (
             <>
-              <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>镜头</p>
+              <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>{t.gallery.lens}</p>
               <p className='mb-3 text-sm text-[var(--color-ink)]'>{image.exif.lens}</p>
             </>
           )}
 
           {(image.exif?.aperture || image.exif?.shutterSpeed || image.exif?.iso || image.exif?.focalLength) && (
             <>
-              <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>拍摄参数</p>
+              <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>{t.gallery.shootingParams}</p>
               <p className='mb-3 text-sm text-[var(--color-ink)]'>
                 {[image.exif.focalLength, image.exif.aperture, image.exif.shutterSpeed, image.exif.iso && `ISO ${image.exif.iso}`]
                   .filter(Boolean)
@@ -128,7 +132,7 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
 
           {image.exif?.location && (
             <>
-              <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>位置</p>
+              <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>{t.gallery.location}</p>
               <p className='mb-3 text-sm text-[var(--color-ink)]'>
                 {image.exif.location.lat.toFixed(6)}, {image.exif.location.lng.toFixed(6)}
               </p>
@@ -149,7 +153,7 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
                     type='button'
                     onClick={() => copyToClipboard(fmt.value, fmt.label)}
                     className='shrink-0 rounded-lg bg-[var(--color-brand)] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[var(--color-brand-strong)]'>
-                    {copied === fmt.label ? '已复制' : '复制'}
+                    {copied === fmt.label ? t.common.copied : t.common.copy}
                   </button>
                 </div>
               </div>
@@ -159,12 +163,12 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
           <div className='mt-4 flex gap-2'>
             {index > 0 && (
               <button type='button' onClick={() => onNavigate(index - 1)} className='rounded-lg border border-[var(--color-border-strong)] bg-white px-3 py-1.5 text-xs text-[var(--color-ink)] transition hover:border-[var(--color-brand)]'>
-                上一张
+                {t.gallery.prevImage}
               </button>
             )}
             {index < images.length - 1 && (
               <button type='button' onClick={() => onNavigate(index + 1)} className='rounded-lg border border-[var(--color-border-strong)] bg-white px-3 py-1.5 text-xs text-[var(--color-ink)] transition hover:border-[var(--color-brand)]'>
-                下一张
+                {t.gallery.nextImage}
               </button>
             )}
           </div>

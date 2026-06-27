@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useLang } from '@/lib/i18n/context'
 
 type TimelineItem = {
   yearMonth: string
@@ -13,16 +14,12 @@ type Props = {
   current: string
 }
 
-function formatYearMonth(ym: string) {
-  const [year, month] = ym.split('-')
-  return `${year}年${Number(month)}月`
-}
-
 export function TimelineBar({ timeline, current }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const { t } = useLang()
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -48,8 +45,13 @@ export function TimelineBar({ timeline, current }: Props) {
 
   if (timeline.length === 0) return null
 
-  const currentLabel = current ? formatYearMonth(current) : '全部时间'
-  const currentCount = current ? timeline.find(t => t.yearMonth === current)?.count || 0 : timeline.reduce((s, t) => s + t.count, 0)
+  const formatYearMonth = (ym: string) => {
+    const [year, month] = ym.split('-')
+    return t.gallery.yearMonth(year, month)
+  }
+
+  const currentLabel = current ? formatYearMonth(current) : t.gallery.allTime
+  const currentCount = current ? timeline.find(item => item.yearMonth === current)?.count || 0 : timeline.reduce((s, item) => s + item.count, 0)
 
   return (
     <div className='relative mb-4' ref={ref}>
@@ -64,7 +66,7 @@ export function TimelineBar({ timeline, current }: Props) {
           <line x1='3' y1='10' x2='21' y2='10' />
         </svg>
         {currentLabel}
-        <span className='text-xs text-[var(--color-ink-soft)]'>{currentCount} 张</span>
+        <span className='text-xs text-[var(--color-ink-soft)]'>{currentCount} {t.gallery.countImages}</span>
         <svg className={`ml-1 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2.5' strokeLinecap='round' strokeLinejoin='round'>
           <polyline points='6 9 12 15 18 9' />
         </svg>
@@ -81,8 +83,8 @@ export function TimelineBar({ timeline, current }: Props) {
               className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition hover:bg-[var(--color-brand)]/10 ${
                 !current ? 'bg-[var(--color-brand)]/10 font-medium text-[var(--color-brand)]' : 'text-[var(--color-ink)]'
               }`}>
-              <span>全部时间</span>
-              <span className='text-xs text-[var(--color-ink-soft)]'>{timeline.reduce((s, t) => s + t.count, 0)}</span>
+              <span>{t.gallery.allTime}</span>
+              <span className='text-xs text-[var(--color-ink-soft)]'>{timeline.reduce((s, item) => s + item.count, 0)}</span>
             </button>
 
             {timeline.map((item, i) => (
@@ -95,7 +97,7 @@ export function TimelineBar({ timeline, current }: Props) {
                 }`}
                 style={{ animationDelay: `${(i + 1) * 30}ms`, animation: 'jelly-slide 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards', opacity: 0 }}>
                 <span>{formatYearMonth(item.yearMonth)}</span>
-                <span className='text-xs text-[var(--color-ink-soft)]'>{item.count} 张</span>
+                <span className='text-xs text-[var(--color-ink-soft)]'>{item.count} {t.gallery.countImages}</span>
               </button>
             ))}
           </div>

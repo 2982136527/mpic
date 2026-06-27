@@ -6,6 +6,7 @@ import type { AlbumRecord } from '@/types/album'
 import { UploadZone } from '@/components/upload/upload-zone'
 import { MyImagesList } from '@/components/dashboard/my-images-list'
 import { AlbumManager } from '@/components/dashboard/album-manager'
+import { useLang } from '@/lib/i18n/context'
 
 type Props = {
   initialImages: (ImageRecord & { links: ImageLinks })[]
@@ -16,6 +17,7 @@ export function DashboardContent({ initialImages, initialAlbums }: Props) {
   const [images, setImages] = useState(initialImages)
   const [albums, setAlbums] = useState(initialAlbums)
   const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null)
+  const { t } = useLang()
 
   const filteredImages = selectedAlbumId === null
     ? images
@@ -82,7 +84,6 @@ export function DashboardContent({ initialImages, initialAlbums }: Props) {
     const res = await fetch(`/api/user/album/${id}`, { method: 'DELETE' })
     if (!res.ok) throw new Error('Failed to delete album')
     setAlbums(prev => prev.filter(a => a.id !== id))
-    // Clear albumId from images that were in this album
     setImages(prev => prev.map(img => img.albumId === id ? { ...img, albumId: undefined } : img))
   }
 
@@ -101,10 +102,10 @@ export function DashboardContent({ initialImages, initialAlbums }: Props) {
 
       <div>
         <h3 className='mb-3 text-sm font-semibold text-[var(--color-ink)]'>
-          我的图片
+          {t.dashboard.myImages}
           {selectedAlbumId !== null && (
             <span className='ml-2 text-xs font-normal text-[var(--color-ink-soft)]'>
-              ({selectedAlbumId === '' ? '未分组' : albums.find(a => a.id === selectedAlbumId)?.name || ''})
+              ({selectedAlbumId === '' ? t.common.ungrouped : albums.find(a => a.id === selectedAlbumId)?.name || ''})
             </span>
           )}
         </h3>

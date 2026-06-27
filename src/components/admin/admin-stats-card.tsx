@@ -1,4 +1,5 @@
 import { formatBytes } from '@/lib/utils'
+import { useLang } from '@/lib/i18n/context'
 
 type Props = {
   totalImages: number
@@ -8,11 +9,12 @@ type Props = {
 }
 
 export function AdminStatsCard({ totalImages, totalSize, totalUsers, todayUploads }: Props) {
+  const { t } = useLang()
   const stats = [
-    { label: '总图片数', value: String(totalImages) },
-    { label: '总存储', value: formatBytes(totalSize) },
-    { label: '注册用户', value: String(totalUsers) },
-    { label: '今日上传', value: String(todayUploads) },
+    { label: t.admin.totalImages, value: String(totalImages) },
+    { label: t.admin.totalStorage, value: formatBytes(totalSize) },
+    { label: t.admin.registeredUsers, value: String(totalUsers) },
+    { label: t.admin.todayUploads, value: String(todayUploads) },
   ]
 
   return (

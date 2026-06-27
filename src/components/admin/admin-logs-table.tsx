@@ -1,21 +1,26 @@
+'use client'
+
 import type { AuditLogEntry } from '@/types/log'
+import { useLang } from '@/lib/i18n/context'
 
 type Props = {
   logs: AuditLogEntry[]
 }
 
-const actionLabels: Record<string, string> = {
-  upload: '上传图片',
-  delete: '删除图片',
-  permanent_delete: '永久删除',
-  update_user: '修改用户',
-  delete_user: '删除用户',
-  update_settings: '修改设置',
-}
-
 export function AdminLogsTable({ logs }: Props) {
+  const { t } = useLang()
+
+  const actionLabels: Record<string, string> = {
+    upload: t.admin.uploadAction,
+    delete: t.admin.deleteAction,
+    permanent_delete: t.admin.permanentDeleteAction,
+    update_user: t.admin.modifyUser,
+    delete_user: t.admin.deleteUser,
+    update_settings: t.admin.modifySettings,
+  }
+
   if (logs.length === 0) {
-    return <p className='py-8 text-center text-sm text-[var(--color-ink-soft)]'>暂无操作记录</p>
+    return <p className='py-8 text-center text-sm text-[var(--color-ink-soft)]'>{t.admin.noLogs}</p>
   }
 
   return (
@@ -23,11 +28,11 @@ export function AdminLogsTable({ logs }: Props) {
       <table className='min-w-full text-left text-sm'>
         <thead className='text-xs text-[var(--color-ink-soft)]'>
           <tr>
-            <th className='px-3 py-2'>时间</th>
-            <th className='px-3 py-2'>操作</th>
-            <th className='px-3 py-2'>操作人</th>
-            <th className='px-3 py-2'>目标</th>
-            <th className='px-3 py-2'>详情</th>
+            <th className='px-3 py-2'>{t.admin.time}</th>
+            <th className='px-3 py-2'>{t.admin.action}</th>
+            <th className='px-3 py-2'>{t.admin.operator}</th>
+            <th className='px-3 py-2'>{t.admin.target}</th>
+            <th className='px-3 py-2'>{t.admin.details}</th>
           </tr>
         </thead>
         <tbody>

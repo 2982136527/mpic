@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { AlbumRecord } from '@/types/album'
+import { useLang } from '@/lib/i18n/context'
 
 type Props = {
   albums: AlbumRecord[]
@@ -20,6 +21,7 @@ export function AlbumManager({ albums, selectedAlbumId, onSelect, onCreate, onUp
   const [editName, setEditName] = useState('')
   const [editIsPublic, setEditIsPublic] = useState(true)
   const [loading, setLoading] = useState(false)
+  const { t } = useLang()
 
   const handleCreate = async () => {
     if (!newName.trim()) return
@@ -46,7 +48,7 @@ export function AlbumManager({ albums, selectedAlbumId, onSelect, onCreate, onUp
   }
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`确定删除相册「${name}」？相册内的图片不会被删除，将变为未分组。`)) return
+    if (!confirm(t.album.confirmDelete(name))) return
     setLoading(true)
     try {
       await onDelete(id)
@@ -59,12 +61,12 @@ export function AlbumManager({ albums, selectedAlbumId, onSelect, onCreate, onUp
   return (
     <div className='space-y-3'>
       <div className='flex items-center justify-between'>
-        <h3 className='text-sm font-semibold text-[var(--color-ink)]'>相册管理</h3>
+        <h3 className='text-sm font-semibold text-[var(--color-ink)]'>{t.album.title}</h3>
         <button
           type='button'
           onClick={() => setShowCreate(!showCreate)}
           className='rounded-lg bg-[var(--color-brand)] px-3 py-1 text-xs font-medium text-white transition hover:bg-[var(--color-brand-strong)]'>
-          新建相册
+          {t.album.newAlbum}
         </button>
       </div>
 
@@ -74,17 +76,17 @@ export function AlbumManager({ albums, selectedAlbumId, onSelect, onCreate, onUp
             type='text'
             value={newName}
             onChange={e => setNewName(e.target.value)}
-            placeholder='相册名称'
+            placeholder={t.album.albumName}
             className='mb-2 w-full rounded-lg border border-[var(--color-border-strong)] bg-white px-3 py-1.5 text-sm text-[var(--color-ink)] outline-none focus:border-[var(--color-brand)]'
           />
           <div className='mb-2 flex items-center gap-3'>
             <label className='flex items-center gap-1.5 text-xs text-[var(--color-ink)]'>
               <input type='radio' name='newPublic' checked={newIsPublic} onChange={() => setNewIsPublic(true)} />
-              公开
+              {t.common.publicLabel}
             </label>
             <label className='flex items-center gap-1.5 text-xs text-[var(--color-ink)]'>
               <input type='radio' name='newPublic' checked={!newIsPublic} onChange={() => setNewIsPublic(false)} />
-              隐私
+              {t.common.privateLabel}
             </label>
           </div>
           <div className='flex gap-2'>
@@ -93,13 +95,13 @@ export function AlbumManager({ albums, selectedAlbumId, onSelect, onCreate, onUp
               disabled={loading || !newName.trim()}
               onClick={handleCreate}
               className='rounded-lg bg-[var(--color-brand)] px-3 py-1 text-xs font-medium text-white disabled:opacity-50'>
-              创建
+              {t.common.create}
             </button>
             <button
               type='button'
               onClick={() => setShowCreate(false)}
               className='rounded-lg border border-[var(--color-border-strong)] bg-white px-3 py-1 text-xs text-[var(--color-ink)]'>
-              取消
+              {t.common.cancel}
             </button>
           </div>
         </div>
@@ -114,7 +116,7 @@ export function AlbumManager({ albums, selectedAlbumId, onSelect, onCreate, onUp
               ? 'bg-[var(--color-brand)] text-white'
               : 'border border-[var(--color-border-strong)] bg-white text-[var(--color-ink)] hover:border-[var(--color-brand)]'
           }`}>
-          全部
+          {t.common.all}
         </button>
         <button
           type='button'
@@ -124,7 +126,7 @@ export function AlbumManager({ albums, selectedAlbumId, onSelect, onCreate, onUp
               ? 'bg-[var(--color-brand)] text-white'
               : 'border border-[var(--color-border-strong)] bg-white text-[var(--color-ink)] hover:border-[var(--color-brand)]'
           }`}>
-          未分组
+          {t.common.ungrouped}
         </button>
         {albums.map(album => (
           <div key={album.id} className='relative'>
@@ -138,13 +140,13 @@ export function AlbumManager({ albums, selectedAlbumId, onSelect, onCreate, onUp
                   autoFocus
                 />
                 <button type='button' onClick={() => setEditIsPublic(!editIsPublic)} className='text-xs'>
-                  {editIsPublic ? '公开' : '隐私'}
+                  {editIsPublic ? t.common.publicLabel : t.common.privateLabel}
                 </button>
                 <button type='button' onClick={() => handleUpdate(album.id)} disabled={loading} className='text-xs text-[var(--color-brand)]'>
-                  保存
+                  {t.common.save}
                 </button>
                 <button type='button' onClick={() => setEditingId(null)} className='text-xs text-[var(--color-ink-soft)]'>
-                  取消
+                  {t.common.cancel}
                 </button>
               </div>
             ) : (
@@ -159,7 +161,7 @@ export function AlbumManager({ albums, selectedAlbumId, onSelect, onCreate, onUp
                 }`}>
                 {album.name}
                 <span className={`ml-0.5 text-[10px] ${selectedAlbumId === album.id ? 'text-white/70' : 'text-[var(--color-ink-soft)]'}`}>
-                  {album.isPublic ? '公开' : '隐私'}
+                  {album.isPublic ? t.common.publicLabel : t.common.privateLabel}
                 </span>
                 <button
                   type='button'
