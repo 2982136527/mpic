@@ -33,17 +33,17 @@ export function FloatingParticles() {
     const createParticle = (): Particle => ({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
-      size: Math.random() * 3 + 1,
-      speedX: (Math.random() - 0.5) * 0.3,
-      speedY: (Math.random() - 0.5) * 0.2 - 0.1,
-      opacity: Math.random() * 0.4 + 0.1,
-      hue: Math.random() * 30 + 25, // warm orange-ish tones
+      size: Math.random() * 4 + 2,
+      speedX: (Math.random() - 0.5) * 1.2,
+      speedY: (Math.random() - 0.5) * 0.8 - 0.2,
+      opacity: Math.random() * 0.5 + 0.3,
+      hue: Math.random() * 30 + 25,
     })
 
     const init = () => {
       resize()
-      const count = Math.floor((canvas.width * canvas.height) / 25000)
-      particles = Array.from({ length: Math.min(count, 40) }, createParticle)
+      const count = Math.floor((canvas.width * canvas.height) / 6000)
+      particles = Array.from({ length: Math.min(count, 100) }, createParticle)
     }
 
     const draw = () => {
@@ -53,7 +53,6 @@ export function FloatingParticles() {
         p.x += p.speedX
         p.y += p.speedY
 
-        // Wrap around
         if (p.x < -10) p.x = canvas.width + 10
         if (p.x > canvas.width + 10) p.x = -10
         if (p.y < -10) p.y = canvas.height + 10
@@ -64,10 +63,9 @@ export function FloatingParticles() {
         ctx.fillStyle = `hsla(${p.hue}, 80%, 75%, ${p.opacity})`
         ctx.fill()
 
-        // Soft glow
         ctx.beginPath()
-        ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2)
-        ctx.fillStyle = `hsla(${p.hue}, 80%, 75%, ${p.opacity * 0.15})`
+        ctx.arc(p.x, p.y, p.size * 4, 0, Math.PI * 2)
+        ctx.fillStyle = `hsla(${p.hue}, 80%, 75%, ${p.opacity * 0.2})`
         ctx.fill()
       }
 
@@ -89,7 +87,6 @@ export function FloatingParticles() {
       ref={canvasRef}
       aria-hidden
       className='pointer-events-none fixed inset-0 -z-10'
-      style={{ opacity: 0.6 }}
     />
   )
 }
