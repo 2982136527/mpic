@@ -80,14 +80,12 @@ export default async function HomePage({ searchParams }: PageProps) {
         )}
 
         {total === 0 ? (
-          <div className='animate-fade-in-up animate-stagger-3 rounded-2xl border border-white/70 bg-white/60 py-20 text-center backdrop-blur'>
+          <div className='rounded-2xl border border-white/70 bg-white/60 py-20 text-center backdrop-blur'>
             <p className='text-lg font-title text-[var(--color-ink)]'>欢迎使用 Mpic</p>
             <p className='mt-2 text-sm text-[var(--color-ink-soft)]'>暂无图片，请登录后上传</p>
           </div>
         ) : (
-          <div className='animate-fade-in-up animate-stagger-3'>
-            <ImageGrid images={images} />
-          </div>
+          <ImageGrid images={images} />
         )}
 
         <GalleryLoadMore

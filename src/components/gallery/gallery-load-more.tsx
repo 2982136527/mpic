@@ -32,8 +32,8 @@ export function GalleryLoadMore({ initialHasMore, search, initialPage }: Props) 
       if (data.images?.length > 0) {
         const container = document.querySelector('[data-image-grid]')
         if (container) {
-          data.images.forEach((img: ImageRecord & { links: ImageLinks }, i: number) => {
-            const card = createImageCard(img, i)
+          data.images.forEach((img: ImageRecord & { links: ImageLinks }) => {
+            const card = createImageCard(img)
             container.appendChild(card)
           })
         }
@@ -87,26 +87,15 @@ export function GalleryLoadMore({ initialHasMore, search, initialPage }: Props) 
   )
 }
 
-function createImageCard(image: ImageRecord & { links: ImageLinks }, index: number): HTMLElement {
+function createImageCard(image: ImageRecord & { links: ImageLinks }): HTMLElement {
   const wrapper = document.createElement('div')
   wrapper.className = 'mb-4 break-inside-avoid'
-  wrapper.style.opacity = '0'
-  wrapper.style.transform = 'translateY(24px) scale(0.97)'
-  wrapper.style.transition = `opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1) ${index * 60}ms, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1) ${index * 60}ms`
 
   wrapper.innerHTML = `
     <button type="button" class="group w-full overflow-hidden rounded-2xl bg-[rgba(255,255,255,0.45)] text-left shadow-sm break-inside-avoid transition-shadow hover:shadow-lg" style="box-shadow: 0 24px 80px -40px rgba(120,45,20,0.55), inset 0 1px 0 0 rgba(255,255,255,0.65)">
       <img src="${image.links.cdn}" alt="${image.filename}" loading="lazy" class="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.03]" />
     </button>
   `
-
-  // Trigger fly-in animation after append
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      wrapper.style.opacity = '1'
-      wrapper.style.transform = 'translateY(0) scale(1)'
-    })
-  })
 
   return wrapper
 }
