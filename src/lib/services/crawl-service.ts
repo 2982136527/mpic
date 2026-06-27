@@ -120,10 +120,8 @@ export async function runCrawl(force = false): Promise<{ fetched: number; duplic
     return index
   })
 
-  // Continue if still enabled and got some results
-  const shouldContinue = config.enabled && (fetched > 0 || duplicates > 0)
-
-  return { fetched, duplicates, errors, shouldContinue }
+  // Continue if still enabled
+  return { fetched, duplicates, errors, shouldContinue: config.enabled }
 }
 
 async function processSource(source: CrawlSource, batchSize: number): Promise<{ fetched: number; duplicates: number; errors: number }> {
