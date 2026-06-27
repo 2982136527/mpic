@@ -8,9 +8,12 @@ type Props = {
   initialHasMore: boolean
   search: string
   initialPage: number
+  yearMonth?: string
+  camera?: string
+  lens?: string
 }
 
-export function GalleryLoadMore({ initialHasMore, search, initialPage }: Props) {
+export function GalleryLoadMore({ initialHasMore, search, initialPage, yearMonth, camera, lens }: Props) {
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(initialHasMore)
   const { t } = useLang()
@@ -27,6 +30,9 @@ export function GalleryLoadMore({ initialHasMore, search, initialPage }: Props) 
       const nextPage = currentPage + 1
       const params = new URLSearchParams({ page: String(nextPage) })
       if (search) params.set('search', search)
+      if (yearMonth) params.set('yearMonth', yearMonth)
+      if (camera) params.set('camera', camera)
+      if (lens) params.set('lens', lens)
 
       const res = await fetch(`/api/images?${params}`)
       const data = await res.json()
@@ -49,7 +55,7 @@ export function GalleryLoadMore({ initialHasMore, search, initialPage }: Props) 
     } finally {
       setLoading(false)
     }
-  }, [loading, hasMore, currentPage, search])
+  }, [loading, hasMore, currentPage, search, yearMonth, camera, lens])
 
   const sentinelCallback = useCallback(
     (node: HTMLDivElement | null) => {

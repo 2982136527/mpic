@@ -90,6 +90,9 @@ export default async function HomePage({ searchParams }: PageProps) {
           initialHasMore={hasMore}
           search={search}
           initialPage={page}
+          yearMonth={yearMonth}
+          camera={camera}
+          lens={lens}
         />
       </main>
 
