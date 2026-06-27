@@ -195,6 +195,15 @@ const en = {
     crawlNamePlaceholder: 'Name, e.g. Sakura API',
     crawlUrlPlaceholder: 'API URL',
     crawlJsonPathPlaceholder: 'JSON path, e.g. data.0.urls.original',
+    crawlLogs: 'Crawl Logs',
+    crawlLogTime: 'Time',
+    crawlLogDuration: 'Duration',
+    crawlLogFetched: 'New',
+    crawlLogDuplicates: 'Dupes',
+    crawlLogErrors: 'Errors',
+    crawlLogSources: 'Sources',
+    crawlNoLogs: 'No crawl records',
+    crawlIntervalHint: 'Set to 0 for no interval limit, runs on every trigger',
   },
 }
 

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import type { CrawlConfig, CrawlSource } from '@/types/crawl'
+import { useState, useEffect, useCallback } from 'react'
+import type { CrawlConfig, CrawlSource, CrawlLogEntry } from '@/types/crawl'
 import { useLang } from '@/lib/i18n/context'
 
 type Props = {
@@ -36,6 +36,20 @@ export function AdminCrawlPage({ config }: Props) {
   const [showForm, setShowForm] = useState(false)
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<string | null>(null)
+  const [logs, setLogs] = useState<CrawlLogEntry[]>([])
+
+  const fetchLogs = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/crawl/logs')
+      if (!res.ok) return
+      const data = await res.json()
+      setLogs(data.logs || [])
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  useEffect(() => { fetchLogs() }, [fetchLogs])
 
   const handleSave = async () => {
     setSaving(true)
@@ -65,6 +79,7 @@ export function AdminCrawlPage({ config }: Props) {
       const data = await res.json()
       const r = data.result
       setRunResult(t.admin.crawlResults(r.fetched, r.duplicates, r.errors))
+      fetchLogs()
     } catch {
       alert(t.common.operationFailed)
     } finally {
@@ -198,9 +213,10 @@ export function AdminCrawlPage({ config }: Props) {
               type='number'
               value={form.intervalMinutes}
               onChange={e => setForm(f => ({ ...f, intervalMinutes: Number(e.target.value) }))}
-              min={1}
+              min={0}
               className='mt-1 w-40 rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-2 text-sm text-[var(--color-ink)] outline-none'
             />
+            <span className='ml-2 text-[10px] text-[var(--color-ink-soft)] opacity-60'>{t.admin.crawlIntervalHint}</span>
           </label>
 
           <label className='block text-xs text-[var(--color-ink-soft)]'>
@@ -352,6 +368,44 @@ export function AdminCrawlPage({ config }: Props) {
         onDelete={deleteSource}
         t={t}
       />
+
+      {/* Crawl Logs */}
+      <div className='rounded-2xl border border-white/70 bg-white/60 p-5 backdrop-blur'>
+        <h3 className='text-sm font-semibold text-[var(--color-ink)]'>{t.admin.crawlLogs}</h3>
+
+        {logs.length === 0 ? (
+          <p className='mt-3 text-xs text-[var(--color-ink-soft)]'>{t.admin.crawlNoLogs}</p>
+        ) : (
+          <div className='mt-3 overflow-x-auto'>
+            <table className='w-full text-left text-xs'>
+              <thead>
+                <tr className='border-b border-[var(--color-border)] text-[var(--color-ink-soft)]'>
+                  <th className='pb-2 pr-3 font-medium'>{t.admin.crawlLogTime}</th>
+                  <th className='pb-2 pr-3 font-medium'>{t.admin.crawlLogDuration}</th>
+                  <th className='pb-2 pr-3 font-medium'>{t.admin.crawlLogFetched}</th>
+                  <th className='pb-2 pr-3 font-medium'>{t.admin.crawlLogDuplicates}</th>
+                  <th className='pb-2 pr-3 font-medium'>{t.admin.crawlLogErrors}</th>
+                  <th className='pb-2 font-medium'>{t.admin.crawlLogSources}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {logs.map(log => (
+                  <tr key={log.id} className='border-b border-[var(--color-border)] last:border-0'>
+                    <td className='py-2 pr-3 text-[var(--color-ink)]'>{new Date(log.startedAt).toLocaleString()}</td>
+                    <td className='py-2 pr-3 text-[var(--color-ink-soft)]'>{(log.duration / 1000).toFixed(1)}s</td>
+                    <td className='py-2 pr-3 font-medium text-green-600'>{log.fetched}</td>
+                    <td className='py-2 pr-3 text-[var(--color-ink-soft)]'>{log.duplicates}</td>
+                    <td className='py-2 pr-3 text-red-500'>{log.errors}</td>
+                    <td className='py-2 text-[var(--color-ink-soft)]'>
+                      {log.sources.filter(s => s.fetched > 0 || s.errors > 0).map(s => s.name).join(', ') || '-'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

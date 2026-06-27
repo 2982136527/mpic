@@ -192,6 +192,15 @@ const zh = {
     crawlNamePlaceholder: '名称，如：樱花API',
     crawlUrlPlaceholder: 'API 地址',
     crawlJsonPathPlaceholder: 'JSON 路径，如：data.0.urls.original',
+    crawlLogs: '采集日志',
+    crawlLogTime: '时间',
+    crawlLogDuration: '耗时',
+    crawlLogFetched: '新增',
+    crawlLogDuplicates: '重复',
+    crawlLogErrors: '失败',
+    crawlLogSources: '数据源',
+    crawlNoLogs: '暂无采集记录',
+    crawlIntervalHint: '设为 0 表示不限间隔，每次触发都会执行',
   },
 }
 

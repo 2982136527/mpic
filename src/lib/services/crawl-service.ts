@@ -1,12 +1,13 @@
 import { getJsonFile, updateJsonWithRetry } from '@/lib/github/client'
-import { DEFAULT_CRAWL_CONFIG, type CrawlConfig, type CrawlSource } from '@/types/crawl'
+import { DEFAULT_CRAWL_CONFIG, type CrawlConfig, type CrawlSource, type CrawlLogEntry, type CrawlLogsIndex } from '@/types/crawl'
 import { getDefaultSources } from '@/lib/crawl/sources'
 import { fetchImage } from '@/lib/crawl/fetcher'
 import { uploadImage } from '@/lib/services/image-service'
-import { appendLog } from '@/lib/services/log-service'
 
 const CRAWL_CONFIG_PATH = 'data/crawl-config.json'
+const CRAWL_LOGS_PATH = 'data/crawl-logs.json'
 const SYSTEM_LOGIN = 'system'
+const MAX_LOG_ENTRIES = 200
 
 export async function getCrawlConfig(): Promise<CrawlConfig> {
   const file = await getJsonFile<CrawlConfig>(CRAWL_CONFIG_PATH)
@@ -29,6 +30,12 @@ export async function updateCrawlConfig(changes: Partial<CrawlConfig>): Promise<
   return getCrawlConfig()
 }
 
+export async function getCrawlLogs(): Promise<CrawlLogEntry[]> {
+  const file = await getJsonFile<CrawlLogsIndex>(CRAWL_LOGS_PATH)
+  if (!file) return []
+  return file.data.logs.slice(0, 50)
+}
+
 export async function runCrawl(force = false): Promise<{ fetched: number; duplicates: number; errors: number }> {
   const config = await getCrawlConfig()
 
@@ -36,8 +43,8 @@ export async function runCrawl(force = false): Promise<{ fetched: number; duplic
     return { fetched: 0, duplicates: 0, errors: 0 }
   }
 
-  // Check interval (skip if forced)
-  if (!force && config.lastRunAt) {
+  // Check interval (skip if forced or interval is 0)
+  if (!force && config.intervalMinutes > 0 && config.lastRunAt) {
     const elapsed = Date.now() - new Date(config.lastRunAt).getTime()
     if (elapsed < config.intervalMinutes * 60 * 1000) {
       return { fetched: 0, duplicates: 0, errors: 0 }
@@ -52,6 +59,8 @@ export async function runCrawl(force = false): Promise<{ fetched: number; duplic
   let fetched = 0
   let duplicates = 0
   let errors = 0
+  const sourceLogs: CrawlLogEntry['sources'] = []
+  const startTime = Date.now()
 
   // Process sources with concurrency limit
   const CONCURRENCY = 3
@@ -60,16 +69,22 @@ export async function runCrawl(force = false): Promise<{ fetched: number; duplic
     const results = await Promise.allSettled(
       batch.map(source => processSource(source, config.batchSize)),
     )
-    for (const result of results) {
+    for (let j = 0; j < results.length; j++) {
+      const result = results[j]
+      const source = batch[j]
       if (result.status === 'fulfilled') {
         fetched += result.value.fetched
         duplicates += result.value.duplicates
         errors += result.value.errors
+        sourceLogs.push({ name: source.name, ...result.value })
       } else {
         errors += config.batchSize
+        sourceLogs.push({ name: source.name, fetched: 0, duplicates: 0, errors: config.batchSize })
       }
     }
   }
+
+  const duration = Date.now() - startTime
 
   // Update lastRunAt
   await updateJsonWithRetry<CrawlConfig>(CRAWL_CONFIG_PATH, current => {
@@ -77,10 +92,24 @@ export async function runCrawl(force = false): Promise<{ fetched: number; duplic
     return { ...base, lastRunAt: new Date().toISOString() }
   })
 
-  await appendLog({
-    action: 'crawl.run',
-    actorLogin: SYSTEM_LOGIN,
-    detail: `fetched=${fetched} duplicates=${duplicates} errors=${errors}`,
+  // Append crawl log
+  const logEntry: CrawlLogEntry = {
+    id: crypto.randomUUID().slice(0, 8),
+    startedAt: new Date(startTime).toISOString(),
+    duration,
+    fetched,
+    duplicates,
+    errors,
+    sources: sourceLogs,
+  }
+
+  await updateJsonWithRetry<CrawlLogsIndex>(CRAWL_LOGS_PATH, current => {
+    const index = current || { version: 1, logs: [] }
+    index.logs.unshift(logEntry)
+    if (index.logs.length > MAX_LOG_ENTRIES) {
+      index.logs = index.logs.slice(0, MAX_LOG_ENTRIES)
+    }
+    return index
   })
 
   return { fetched, duplicates, errors }
