@@ -184,6 +184,14 @@ const zh = {
     crawlSourceName: '名称',
     crawlSourceUrl: 'API 地址',
     crawlNeverRun: '从未运行',
+    crawlAddSource: '添加数据源',
+    crawlEditSource: '编辑',
+    crawlDeleteSource: '删除',
+    crawlConfirmDelete: '确定删除该数据源？',
+    crawlSourceForm: '数据源信息',
+    crawlNamePlaceholder: '名称，如：樱花API',
+    crawlUrlPlaceholder: 'API 地址',
+    crawlJsonPathPlaceholder: 'JSON 路径，如：data.0.urls.original',
   },
 }
 

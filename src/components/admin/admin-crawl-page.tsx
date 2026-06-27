@@ -8,6 +8,22 @@ type Props = {
   config: CrawlConfig
 }
 
+type SourceFormState = {
+  name: string
+  url: string
+  category: 'anime' | 'real'
+  responseType: 'redirect' | 'json' | 'direct'
+  jsonPath: string
+}
+
+const EMPTY_SOURCE_FORM: SourceFormState = {
+  name: '',
+  url: '',
+  category: 'anime',
+  responseType: 'redirect',
+  jsonPath: '',
+}
+
 export function AdminCrawlPage({ config }: Props) {
   const { t } = useLang()
   const [form, setForm] = useState(config)
@@ -15,6 +31,9 @@ export function AdminCrawlPage({ config }: Props) {
   const [saved, setSaved] = useState(false)
   const [running, setRunning] = useState(false)
   const [runResult, setRunResult] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [sourceForm, setSourceForm] = useState<SourceFormState>(EMPTY_SOURCE_FORM)
+  const [showForm, setShowForm] = useState(false)
 
   const handleSave = async () => {
     setSaving(true)
@@ -63,6 +82,56 @@ export function AdminCrawlPage({ config }: Props) {
       ...f,
       sources: f.sources.map(s => (s.category === category ? { ...s, enabled } : s)),
     }))
+  }
+
+  const openAddForm = () => {
+    setEditingId(null)
+    setSourceForm(EMPTY_SOURCE_FORM)
+    setShowForm(true)
+  }
+
+  const openEditForm = (source: CrawlSource) => {
+    setEditingId(source.id)
+    setSourceForm({
+      name: source.name,
+      url: source.url,
+      category: source.category,
+      responseType: source.responseType,
+      jsonPath: source.jsonPath || '',
+    })
+    setShowForm(true)
+  }
+
+  const handleSourceFormSubmit = () => {
+    if (!sourceForm.name || !sourceForm.url) return
+
+    if (editingId) {
+      setForm(f => ({
+        ...f,
+        sources: f.sources.map(s =>
+          s.id === editingId
+            ? { ...s, ...sourceForm, jsonPath: sourceForm.responseType === 'json' ? sourceForm.jsonPath : undefined }
+            : s,
+        ),
+      }))
+    } else {
+      const newSource: CrawlSource = {
+        id: `src_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+        ...sourceForm,
+        jsonPath: sourceForm.responseType === 'json' ? sourceForm.jsonPath : undefined,
+        enabled: true,
+      }
+      setForm(f => ({ ...f, sources: [...f.sources, newSource] }))
+    }
+
+    setShowForm(false)
+    setEditingId(null)
+    setSourceForm(EMPTY_SOURCE_FORM)
+  }
+
+  const deleteSource = (id: string) => {
+    if (!confirm(t.admin.crawlConfirmDelete)) return
+    setForm(f => ({ ...f, sources: f.sources.filter(s => s.id !== id) }))
   }
 
   const animeSources = form.sources.filter(s => s.category === 'anime')
@@ -139,12 +208,89 @@ export function AdminCrawlPage({ config }: Props) {
         </div>
       </div>
 
+      {/* Add Source Button */}
+      <div className='flex justify-end'>
+        <button
+          type='button'
+          onClick={openAddForm}
+          className='rounded-xl bg-[var(--color-brand)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-brand-strong)]'>
+          + {t.admin.crawlAddSource}
+        </button>
+      </div>
+
+      {/* Source Form Modal */}
+      {showForm && (
+        <div className='rounded-2xl border border-[var(--color-brand)] bg-white p-5 shadow-lg'>
+          <h3 className='text-sm font-semibold text-[var(--color-ink)]'>
+            {editingId ? t.admin.crawlEditSource : t.admin.crawlSourceForm}
+          </h3>
+
+          <div className='mt-3 space-y-3'>
+            <input
+              value={sourceForm.name}
+              onChange={e => setSourceForm(f => ({ ...f, name: e.target.value }))}
+              placeholder={t.admin.crawlNamePlaceholder}
+              className='w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-2 text-sm text-[var(--color-ink)] outline-none'
+            />
+            <input
+              value={sourceForm.url}
+              onChange={e => setSourceForm(f => ({ ...f, url: e.target.value }))}
+              placeholder={t.admin.crawlUrlPlaceholder}
+              className='w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-2 text-sm text-[var(--color-ink)] outline-none'
+            />
+            <div className='flex gap-3'>
+              <select
+                value={sourceForm.category}
+                onChange={e => setSourceForm(f => ({ ...f, category: e.target.value as 'anime' | 'real' }))}
+                className='rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-2 text-sm text-[var(--color-ink)] outline-none'>
+                <option value='anime'>{t.admin.crawlCategoryAnime}</option>
+                <option value='real'>{t.admin.crawlCategoryReal}</option>
+              </select>
+              <select
+                value={sourceForm.responseType}
+                onChange={e => setSourceForm(f => ({ ...f, responseType: e.target.value as 'redirect' | 'json' | 'direct' }))}
+                className='rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-2 text-sm text-[var(--color-ink)] outline-none'>
+                <option value='redirect'>redirect</option>
+                <option value='json'>json</option>
+                <option value='direct'>direct</option>
+              </select>
+            </div>
+            {sourceForm.responseType === 'json' && (
+              <input
+                value={sourceForm.jsonPath}
+                onChange={e => setSourceForm(f => ({ ...f, jsonPath: e.target.value }))}
+                placeholder={t.admin.crawlJsonPathPlaceholder}
+                className='w-full rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-2 text-sm text-[var(--color-ink)] outline-none'
+              />
+            )}
+          </div>
+
+          <div className='mt-4 flex gap-2'>
+            <button
+              type='button'
+              onClick={handleSourceFormSubmit}
+              disabled={!sourceForm.name || !sourceForm.url}
+              className='rounded-xl bg-[var(--color-brand)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-brand-strong)] disabled:opacity-50'>
+              {t.common.confirm}
+            </button>
+            <button
+              type='button'
+              onClick={() => { setShowForm(false); setEditingId(null) }}
+              className='rounded-xl border border-[var(--color-border-strong)] bg-white px-4 py-2 text-sm text-[var(--color-ink-soft)] transition hover:text-[var(--color-ink)]'>
+              {t.common.cancel}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Anime Sources */}
       <SourcesTable
         title={t.admin.crawlCategoryAnime}
         sources={animeSources}
         onToggle={toggleSource}
         onToggleAll={enabled => toggleCategory('anime', enabled)}
+        onEdit={openEditForm}
+        onDelete={deleteSource}
         t={t}
       />
 
@@ -154,6 +300,8 @@ export function AdminCrawlPage({ config }: Props) {
         sources={realSources}
         onToggle={toggleSource}
         onToggleAll={enabled => toggleCategory('real', enabled)}
+        onEdit={openEditForm}
+        onDelete={deleteSource}
         t={t}
       />
     </div>
@@ -165,12 +313,16 @@ function SourcesTable({
   sources,
   onToggle,
   onToggleAll,
+  onEdit,
+  onDelete,
   t,
 }: {
   title: string
   sources: CrawlSource[]
   onToggle: (id: string) => void
   onToggleAll: (enabled: boolean) => void
+  onEdit: (source: CrawlSource) => void
+  onDelete: (id: string) => void
   t: ReturnType<typeof useLang>['t']
 }) {
   const enabledCount = sources.filter(s => s.enabled).length
@@ -182,17 +334,11 @@ function SourcesTable({
           {title} ({enabledCount}/{sources.length})
         </h3>
         <div className='flex gap-2 text-xs'>
-          <button
-            type='button'
-            onClick={() => onToggleAll(true)}
-            className='text-[var(--color-brand)] hover:underline'>
+          <button type='button' onClick={() => onToggleAll(true)} className='text-[var(--color-brand)] hover:underline'>
             {t.common.all}
           </button>
           <span className='text-[var(--color-ink-soft)]'>/</span>
-          <button
-            type='button'
-            onClick={() => onToggleAll(false)}
-            className='text-[var(--color-ink-soft)] hover:underline'>
+          <button type='button' onClick={() => onToggleAll(false)} className='text-[var(--color-ink-soft)] hover:underline'>
             {t.common.cancel}
           </button>
         </div>
@@ -206,22 +352,28 @@ function SourcesTable({
               <th className='pb-2 pr-3 font-medium'>{t.admin.crawlSourceName}</th>
               <th className='pb-2 pr-3 font-medium'>{t.admin.crawlSourceUrl}</th>
               <th className='pb-2 pr-3 font-medium'>{t.admin.crawlResponseType}</th>
+              <th className='pb-2 font-medium'>{t.common.edit}</th>
             </tr>
           </thead>
           <tbody>
             {sources.map(source => (
               <tr key={source.id} className='border-b border-[var(--color-border)] last:border-0'>
                 <td className='py-2 pr-3'>
-                  <input
-                    type='checkbox'
-                    checked={source.enabled}
-                    onChange={() => onToggle(source.id)}
-                    className='rounded'
-                  />
+                  <input type='checkbox' checked={source.enabled} onChange={() => onToggle(source.id)} className='rounded' />
                 </td>
                 <td className='py-2 pr-3 text-[var(--color-ink)]'>{source.name}</td>
-                <td className='max-w-[300px] truncate py-2 pr-3 text-[var(--color-ink-soft)]'>{source.url}</td>
+                <td className='max-w-[280px] truncate py-2 pr-3 text-[var(--color-ink-soft)]'>{source.url}</td>
                 <td className='py-2 pr-3 text-[var(--color-ink-soft)]'>{source.responseType}</td>
+                <td className='py-2'>
+                  <div className='flex gap-2'>
+                    <button type='button' onClick={() => onEdit(source)} className='text-[var(--color-brand)] hover:underline'>
+                      {t.admin.crawlEditSource}
+                    </button>
+                    <button type='button' onClick={() => onDelete(source.id)} className='text-red-500 hover:underline'>
+                      {t.admin.crawlDeleteSource}
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>

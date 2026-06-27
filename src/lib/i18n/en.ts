@@ -187,6 +187,14 @@ const en = {
     crawlSourceName: 'Name',
     crawlSourceUrl: 'API URL',
     crawlNeverRun: 'Never run',
+    crawlAddSource: 'Add Source',
+    crawlEditSource: 'Edit',
+    crawlDeleteSource: 'Delete',
+    crawlConfirmDelete: 'Delete this source?',
+    crawlSourceForm: 'Source Info',
+    crawlNamePlaceholder: 'Name, e.g. Sakura API',
+    crawlUrlPlaceholder: 'API URL',
+    crawlJsonPathPlaceholder: 'JSON path, e.g. data.0.urls.original',
   },
 }
 
