@@ -57,7 +57,7 @@ export default async function HomePage({ searchParams }: PageProps) {
       <SiteHeader />
 
       <main className='mx-auto w-full max-w-6xl px-5 sm:px-8'>
-        <div className='mb-4'>
+        <div className='mb-4 animate-fade-in-up'>
           <Suspense>
             <SearchBar />
           </Suspense>
@@ -65,23 +65,29 @@ export default async function HomePage({ searchParams }: PageProps) {
 
         {timeline.length > 0 && (
           <Suspense>
-            <TimelineBar timeline={timeline} current={yearMonth} />
+            <div className='animate-fade-in-up animate-stagger-1'>
+              <TimelineBar timeline={timeline} current={yearMonth} />
+            </div>
           </Suspense>
         )}
 
         {(cameras.length > 0 || lenses.length > 0) && (
           <Suspense>
-            <ExifFilters cameras={cameras} lenses={lenses} currentCamera={camera} currentLens={lens} />
+            <div className='animate-fade-in-up animate-stagger-2'>
+              <ExifFilters cameras={cameras} lenses={lenses} currentCamera={camera} currentLens={lens} />
+            </div>
           </Suspense>
         )}
 
         {total === 0 ? (
-          <div className='rounded-2xl border border-white/70 bg-white/60 py-20 text-center backdrop-blur'>
+          <div className='animate-fade-in-up animate-stagger-3 rounded-2xl border border-white/70 bg-white/60 py-20 text-center backdrop-blur'>
             <p className='text-lg font-title text-[var(--color-ink)]'>欢迎使用 Mpic</p>
             <p className='mt-2 text-sm text-[var(--color-ink-soft)]'>暂无图片，请登录后上传</p>
           </div>
         ) : (
-          <ImageGrid images={images} />
+          <div className='animate-fade-in-up animate-stagger-3'>
+            <ImageGrid images={images} />
+          </div>
         )}
 
         <GalleryLoadMore

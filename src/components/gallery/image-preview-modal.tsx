@@ -14,11 +14,16 @@ type Props = {
 export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props) {
   const image = images[index]
   const [copied, setCopied] = useState<string | null>(null)
+  const [entering, setEntering] = useState(false)
 
   const copyToClipboard = useCallback(async (text: string, label: string) => {
     await navigator.clipboard.writeText(text)
     setCopied(label)
     setTimeout(() => setCopied(null), 1500)
+  }, [])
+
+  useEffect(() => {
+    requestAnimationFrame(() => setEntering(true))
   }, [])
 
   useEffect(() => {
@@ -39,12 +44,31 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
   ]
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center p-4' onClick={onClose}>
-      <div className='absolute inset-0 bg-black/60 backdrop-blur-sm' />
+    <div
+      className='fixed inset-0 z-50 flex items-center justify-center p-4'
+      onClick={onClose}
+      style={{
+        opacity: entering ? 1 : 0,
+        transition: 'opacity 0.3s ease',
+      }}
+    >
+      <div
+        className='absolute inset-0 bg-black/60 backdrop-blur-sm'
+        style={{
+          opacity: entering ? 1 : 0,
+          transition: 'opacity 0.3s ease',
+        }}
+      />
 
       <div
         className='relative z-10 flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-white/20 bg-white/90 shadow-2xl backdrop-blur-xl md:flex-row'
-        onClick={e => e.stopPropagation()}>
+        onClick={e => e.stopPropagation()}
+        style={{
+          opacity: entering ? 1 : 0,
+          transform: entering ? 'scale(1) translateY(0)' : 'scale(0.95) translateY(16px)',
+          transition: 'opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1), transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)',
+        }}
+      >
         <div className='flex flex-1 items-center justify-center bg-black/5 p-4'>
           <img src={image.links.cdn} alt={image.filename} className='max-h-[70vh] max-w-full object-contain' />
         </div>
@@ -52,7 +76,7 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
         <div className='w-full overflow-y-auto p-5 md:w-80'>
           <div className='mb-4 flex items-start justify-between'>
             <h3 className='text-sm font-semibold text-[var(--color-ink)]'>图片详情</h3>
-            <button type='button' onClick={onClose} className='text-xl text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]'>&times;</button>
+            <button type='button' onClick={onClose} className='text-xl text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] transition'>&times;</button>
           </div>
 
           <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>文件名</p>
@@ -134,12 +158,12 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
 
           <div className='mt-4 flex gap-2'>
             {index > 0 && (
-              <button type='button' onClick={() => onNavigate(index - 1)} className='rounded-lg border border-[var(--color-border-strong)] bg-white px-3 py-1.5 text-xs text-[var(--color-ink)]'>
+              <button type='button' onClick={() => onNavigate(index - 1)} className='rounded-lg border border-[var(--color-border-strong)] bg-white px-3 py-1.5 text-xs text-[var(--color-ink)] transition hover:border-[var(--color-brand)]'>
                 上一张
               </button>
             )}
             {index < images.length - 1 && (
-              <button type='button' onClick={() => onNavigate(index + 1)} className='rounded-lg border border-[var(--color-border-strong)] bg-white px-3 py-1.5 text-xs text-[var(--color-ink)]'>
+              <button type='button' onClick={() => onNavigate(index + 1)} className='rounded-lg border border-[var(--color-border-strong)] bg-white px-3 py-1.5 text-xs text-[var(--color-ink)] transition hover:border-[var(--color-brand)]'>
                 下一张
               </button>
             )}

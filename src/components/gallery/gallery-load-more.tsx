@@ -12,6 +12,7 @@ type Props = {
 export function GalleryLoadMore({ initialHasMore, search, initialPage }: Props) {
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(initialHasMore)
+  const [currentPage, setCurrentPage] = useState(initialPage)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   const observerRef = useRef<IntersectionObserver | null>(null)
@@ -21,7 +22,7 @@ export function GalleryLoadMore({ initialHasMore, search, initialPage }: Props) 
     setLoading(true)
 
     try {
-      const nextPage = initialPage + 1
+      const nextPage = currentPage + 1
       const params = new URLSearchParams({ page: String(nextPage) })
       if (search) params.set('search', search)
 
@@ -31,11 +32,12 @@ export function GalleryLoadMore({ initialHasMore, search, initialPage }: Props) 
       if (data.images?.length > 0) {
         const container = document.querySelector('[data-image-grid]')
         if (container) {
-          for (const img of data.images) {
-            const card = createImageCard(img)
+          data.images.forEach((img: ImageRecord & { links: ImageLinks }, i: number) => {
+            const card = createImageCard(img, i)
             container.appendChild(card)
-          }
+          })
         }
+        setCurrentPage(nextPage)
         setHasMore(data.hasMore)
       } else {
         setHasMore(false)
@@ -45,7 +47,7 @@ export function GalleryLoadMore({ initialHasMore, search, initialPage }: Props) 
     } finally {
       setLoading(false)
     }
-  }, [loading, hasMore, initialPage, search])
+  }, [loading, hasMore, currentPage, search])
 
   const sentinelCallback = useCallback(
     (node: HTMLDivElement | null) => {
@@ -63,7 +65,7 @@ export function GalleryLoadMore({ initialHasMore, search, initialPage }: Props) 
             loadMore()
           }
         },
-        { rootMargin: '200px' },
+        { rootMargin: '500px' },
       )
 
       observerRef.current.observe(node)
@@ -85,19 +87,26 @@ export function GalleryLoadMore({ initialHasMore, search, initialPage }: Props) 
   )
 }
 
-function createImageCard(image: ImageRecord & { links: ImageLinks }): HTMLElement {
-  const div = document.createElement('div')
-  div.className = 'mb-4 break-inside-avoid'
-  div.innerHTML = `
-    <button type="button" class="group w-full overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.55)] bg-[rgba(255,255,255,0.45)] text-left shadow-sm transition hover:shadow-md" style="box-shadow: 0 24px 80px -40px rgba(120,45,20,0.55), inset 0 1px 0 0 rgba(255,255,255,0.65)">
-      <div class="overflow-hidden">
-        <img src="${image.links.cdn}" alt="${image.filename}" loading="lazy" class="w-full object-cover transition group-hover:scale-[1.02]" />
-      </div>
-      <div class="p-3">
-        <p class="truncate text-xs font-medium text-[var(--color-ink)]">${image.filename}</p>
-        <p class="mt-1 text-[11px] text-[var(--color-ink-soft)]">${image.uploaderLogin}</p>
-      </div>
+function createImageCard(image: ImageRecord & { links: ImageLinks }, index: number): HTMLElement {
+  const wrapper = document.createElement('div')
+  wrapper.className = 'mb-4 break-inside-avoid'
+  wrapper.style.opacity = '0'
+  wrapper.style.transform = 'translateY(24px) scale(0.97)'
+  wrapper.style.transition = `opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1) ${index * 60}ms, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1) ${index * 60}ms`
+
+  wrapper.innerHTML = `
+    <button type="button" class="group w-full overflow-hidden rounded-2xl bg-[rgba(255,255,255,0.45)] text-left shadow-sm break-inside-avoid transition-shadow hover:shadow-lg" style="box-shadow: 0 24px 80px -40px rgba(120,45,20,0.55), inset 0 1px 0 0 rgba(255,255,255,0.65)">
+      <img src="${image.links.cdn}" alt="${image.filename}" loading="lazy" class="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.03]" />
     </button>
   `
-  return div
+
+  // Trigger fly-in animation after append
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      wrapper.style.opacity = '1'
+      wrapper.style.transform = 'translateY(0) scale(1)'
+    })
+  })
+
+  return wrapper
 }
