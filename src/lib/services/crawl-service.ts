@@ -9,6 +9,7 @@ const CRAWL_LOGS_PATH = 'data/crawl-logs.json'
 const SYSTEM_LOGIN = 'system'
 const MAX_LOG_ENTRIES = 200
 const CONCURRENCY = 3
+const BATCH_SIZE = 5
 
 export async function getCrawlConfig(): Promise<CrawlConfig> {
   const file = await getJsonFile<CrawlConfig>(CRAWL_CONFIG_PATH)
@@ -74,7 +75,7 @@ export async function runCrawl(force = false): Promise<{ fetched: number; duplic
   for (let i = 0; i < enabledSources.length; i += CONCURRENCY) {
     const batch = enabledSources.slice(i, i + CONCURRENCY)
     const results = await Promise.allSettled(
-      batch.map(source => processSource(source)),
+      batch.map(source => processSource(source, BATCH_SIZE)),
     )
     for (let j = 0; j < results.length; j++) {
       const result = results[j]
@@ -125,22 +126,34 @@ export async function runCrawl(force = false): Promise<{ fetched: number; duplic
   return { fetched, duplicates, errors, shouldContinue }
 }
 
-async function processSource(source: CrawlSource): Promise<{ fetched: number; duplicates: number; errors: number }> {
-  try {
-    const result = await fetchImage(source)
-    const ext = result.mimeType.split('/')[1] || 'jpg'
-    const filename = `crawl_${source.id}_${Date.now()}.${ext}`
+async function processSource(source: CrawlSource, batchSize: number): Promise<{ fetched: number; duplicates: number; errors: number }> {
+  let fetched = 0
+  let duplicates = 0
+  let errors = 0
 
-    const { isDuplicate } = await uploadImage({
-      buffer: result.buffer,
-      filename,
-      mimeType: result.mimeType,
-      uploaderLogin: SYSTEM_LOGIN,
-      isPublic: true,
-    })
+  for (let i = 0; i < batchSize; i++) {
+    try {
+      const result = await fetchImage(source)
+      const ext = result.mimeType.split('/')[1] || 'jpg'
+      const filename = `crawl_${source.id}_${Date.now()}_${i}.${ext}`
 
-    return { fetched: isDuplicate ? 0 : 1, duplicates: isDuplicate ? 1 : 0, errors: 0 }
-  } catch {
-    return { fetched: 0, duplicates: 0, errors: 1 }
+      const { isDuplicate } = await uploadImage({
+        buffer: result.buffer,
+        filename,
+        mimeType: result.mimeType,
+        uploaderLogin: SYSTEM_LOGIN,
+        isPublic: true,
+      })
+
+      if (isDuplicate) {
+        duplicates++
+      } else {
+        fetched++
+      }
+    } catch {
+      errors++
+    }
   }
+
+  return { fetched, duplicates, errors }
 }
