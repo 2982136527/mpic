@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { signOut } from 'next-auth/react'
 
 type SessionData = {
@@ -15,12 +15,21 @@ type SessionData = {
 export function UserMenu() {
   const [session, setSession] = useState<SessionData | null>(null)
   const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetch('/api/auth/session', { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data?.user?.login) setSession(data) })
       .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
   }, [])
 
   if (!session?.user?.login) {
@@ -34,7 +43,7 @@ export function UserMenu() {
   }
 
   return (
-    <div className='relative'>
+    <div className='relative' ref={ref}>
       <button
         type='button'
         onClick={() => setOpen(!open)}
@@ -46,25 +55,24 @@ export function UserMenu() {
       </button>
 
       {open && (
-        <>
-          <div className='fixed inset-0 z-40' onClick={() => setOpen(false)} />
-          <div className='absolute right-0 z-50 mt-2 w-40 overflow-hidden rounded-xl border border-[var(--glass-border)] bg-white/90 py-1 shadow-lg backdrop-blur'>
-            <Link href='/dashboard' onClick={() => setOpen(false)} className='block px-4 py-2 text-sm text-[var(--color-ink)] hover:bg-[var(--color-bg)]'>
-              个人中心
+        <div
+          className='absolute right-0 z-[100] mt-2 w-40 origin-top-right overflow-hidden rounded-xl border border-[var(--glass-border)] bg-white/95 py-1 shadow-xl backdrop-blur-xl'
+          style={{ animation: 'jelly-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' }}>
+          <Link href='/dashboard' onClick={() => setOpen(false)} className='block px-4 py-2 text-sm text-[var(--color-ink)] transition hover:bg-[var(--color-brand)]/10'>
+            个人中心
+          </Link>
+          {session.user.role === 'admin' && (
+            <Link href='/admin' onClick={() => setOpen(false)} className='block px-4 py-2 text-sm text-[var(--color-ink)] transition hover:bg-[var(--color-brand)]/10'>
+              管理后台
             </Link>
-            {session.user.role === 'admin' && (
-              <Link href='/admin' onClick={() => setOpen(false)} className='block px-4 py-2 text-sm text-[var(--color-ink)] hover:bg-[var(--color-bg)]'>
-                管理后台
-              </Link>
-            )}
-            <button
-              type='button'
-              onClick={() => signOut({ callbackUrl: '/' })}
-              className='block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50'>
-              退出登录
-            </button>
-          </div>
-        </>
+          )}
+          <button
+            type='button'
+            onClick={() => signOut({ callbackUrl: '/' })}
+            className='block w-full px-4 py-2 text-left text-sm text-red-600 transition hover:bg-red-50'>
+            退出登录
+          </button>
+        </div>
       )}
     </div>
   )
