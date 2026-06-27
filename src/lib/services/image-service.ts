@@ -150,6 +150,15 @@ export async function getImage(id: string): Promise<ImageRecord | null> {
   return file.data.images.find(img => img.id === id && !img.deletedAt) || null
 }
 
+export async function getRandomPublicImage(): Promise<{ record: ImageRecord; links: ImageLinks } | null> {
+  const file = await getJsonFile<ImagesIndex>(IMAGES_PATH)
+  if (!file) return null
+  const publicImages = file.data.images.filter(img => !img.deletedAt && img.isPublic !== false)
+  if (publicImages.length === 0) return null
+  const record = publicImages[Math.floor(Math.random() * publicImages.length)]
+  return { record, links: buildImageLinks(record) }
+}
+
 export async function uploadImage(params: {
   buffer: Buffer
   filename: string
