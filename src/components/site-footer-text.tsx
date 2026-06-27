@@ -6,7 +6,7 @@ export function SiteFooterText() {
   const { t } = useLang()
   return (
     <p>
-      Mpic &mdash; {t.nav.siteDesc}{' '}
+      MPic &mdash; {t.nav.siteDesc}{' '}
       <a href='https://github.com/2982136527/mpic' target='_blank' rel='noopener noreferrer' className='underline transition hover:text-[var(--color-brand)]'>
         GitHub
       </a>

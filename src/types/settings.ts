@@ -11,7 +11,7 @@ export type SiteSettings = {
 
 export const DEFAULT_SETTINGS: SiteSettings = {
   version: 1,
-  siteName: 'Mpic',
+  siteName: 'MPic',
   siteDescription: '多用户公开相册图床',
   cdnBaseUrl: '',
   maxFileSizeBytes: 5 * 1024 * 1024,

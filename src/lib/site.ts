@@ -1,5 +1,5 @@
 export const siteMeta = {
-  name: 'Mpic',
+  name: 'MPic',
   description: '多用户公开相册图床，基于 GitHub 存储',
 }
 

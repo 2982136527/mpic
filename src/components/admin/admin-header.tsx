@@ -8,7 +8,7 @@ export function AdminHeader() {
   return (
     <header className='mx-auto flex w-full max-w-6xl items-center justify-between px-5 pt-7 pb-5 sm:px-8'>
       <div>
-        <h1 className='font-title text-3xl text-[var(--color-ink)]'>Mpic Admin</h1>
+        <h1 className='font-title text-3xl text-[var(--color-ink)]'>MPic Admin</h1>
         <p className='text-sm text-[var(--color-ink-soft)]'>{t.admin.pageTitle}</p>
       </div>
 

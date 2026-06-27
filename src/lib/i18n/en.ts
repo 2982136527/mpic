@@ -29,7 +29,7 @@ const en = {
   },
 
   nav: {
-    siteName: 'Mpic',
+    siteName: 'MPic',
     siteDesc: 'Public Image Hosting',
     login: 'Login',
     dashboard: 'Dashboard',
@@ -40,7 +40,7 @@ const en = {
 
   auth: {
     githubSignIn: 'Sign in with GitHub',
-    loginTitle: 'Login to Mpic',
+    loginTitle: 'Login to MPic',
     loginDesc: 'Sign in with your GitHub account to upload and manage images.',
   },
 
@@ -67,7 +67,7 @@ const en = {
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
       return `${monthNames[Number(month) - 1]} ${year}`
     },
-    welcomeTitle: 'Welcome to Mpic',
+    welcomeTitle: 'Welcome to MPic',
     welcomeDesc: 'No images yet. Please log in to upload.',
   },
 

@@ -29,7 +29,7 @@ const zh = {
   },
 
   nav: {
-    siteName: 'Mpic',
+    siteName: 'MPic',
     siteDesc: '公开相册图床',
     login: '登录',
     dashboard: '个人中心',
@@ -40,7 +40,7 @@ const zh = {
 
   auth: {
     githubSignIn: '使用 GitHub 登录',
-    loginTitle: '登录 Mpic',
+    loginTitle: '登录 MPic',
     loginDesc: '使用 GitHub 账号登录后即可上传和管理图片。',
   },
 
@@ -64,7 +64,7 @@ const zh = {
     nextImage: '下一张',
     countImages: '张',
     yearMonth: (year: string | number, month: string | number) => `${year}年${Number(month)}月`,
-    welcomeTitle: '欢迎使用 Mpic',
+    welcomeTitle: '欢迎使用 MPic',
     welcomeDesc: '暂无图片，请登录后上传',
   },
 
