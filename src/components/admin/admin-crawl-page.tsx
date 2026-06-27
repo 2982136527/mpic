@@ -1,0 +1,232 @@
+'use client'
+
+import { useState } from 'react'
+import type { CrawlConfig, CrawlSource } from '@/types/crawl'
+import { useLang } from '@/lib/i18n/context'
+
+type Props = {
+  config: CrawlConfig
+}
+
+export function AdminCrawlPage({ config }: Props) {
+  const { t } = useLang()
+  const [form, setForm] = useState(config)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [running, setRunning] = useState(false)
+  const [runResult, setRunResult] = useState<string | null>(null)
+
+  const handleSave = async () => {
+    setSaving(true)
+    setSaved(false)
+    try {
+      const res = await fetch('/api/admin/crawl', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) throw new Error('Save failed')
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch {
+      alert(t.admin.saveFailed)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleRunNow = async () => {
+    setRunning(true)
+    setRunResult(null)
+    try {
+      const res = await fetch('/api/admin/crawl/run', { method: 'POST' })
+      if (!res.ok) throw new Error('Run failed')
+      const data = await res.json()
+      const r = data.result
+      setRunResult(t.admin.crawlResults(r.fetched, r.duplicates, r.errors))
+    } catch {
+      alert(t.common.operationFailed)
+    } finally {
+      setRunning(false)
+    }
+  }
+
+  const toggleSource = (id: string) => {
+    setForm(f => ({
+      ...f,
+      sources: f.sources.map(s => (s.id === id ? { ...s, enabled: !s.enabled } : s)),
+    }))
+  }
+
+  const toggleCategory = (category: 'anime' | 'real', enabled: boolean) => {
+    setForm(f => ({
+      ...f,
+      sources: f.sources.map(s => (s.category === category ? { ...s, enabled } : s)),
+    }))
+  }
+
+  const animeSources = form.sources.filter(s => s.category === 'anime')
+  const realSources = form.sources.filter(s => s.category === 'real')
+
+  return (
+    <div className='space-y-6'>
+      {/* Global Settings */}
+      <div className='rounded-2xl border border-white/70 bg-white/60 p-5 backdrop-blur'>
+        <h3 className='text-sm font-semibold text-[var(--color-ink)]'>{t.admin.crawlSettings}</h3>
+
+        <div className='mt-4 space-y-4'>
+          <label className='flex items-center gap-2 text-xs text-[var(--color-ink-soft)]'>
+            <input
+              type='checkbox'
+              checked={form.enabled}
+              onChange={e => setForm(f => ({ ...f, enabled: e.target.checked }))}
+              className='rounded'
+            />
+            {t.admin.crawlEnabled}
+          </label>
+
+          <label className='block text-xs text-[var(--color-ink-soft)]'>
+            {t.admin.crawlInterval}
+            <input
+              type='number'
+              value={form.intervalMinutes}
+              onChange={e => setForm(f => ({ ...f, intervalMinutes: Number(e.target.value) }))}
+              min={1}
+              className='mt-1 w-40 rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-2 text-sm text-[var(--color-ink)] outline-none'
+            />
+          </label>
+
+          <label className='block text-xs text-[var(--color-ink-soft)]'>
+            {t.admin.crawlBatchSize}
+            <input
+              type='number'
+              value={form.batchSize}
+              onChange={e => setForm(f => ({ ...f, batchSize: Number(e.target.value) }))}
+              min={1}
+              max={50}
+              className='mt-1 w-40 rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-2 text-sm text-[var(--color-ink)] outline-none'
+            />
+          </label>
+
+          <p className='text-xs text-[var(--color-ink-soft)]'>
+            {t.admin.crawlLastRun}：{form.lastRunAt ? new Date(form.lastRunAt).toLocaleString() : t.admin.crawlNeverRun}
+          </p>
+        </div>
+
+        <div className='mt-4 flex items-center gap-3'>
+          <button
+            type='button'
+            onClick={handleSave}
+            disabled={saving}
+            className='rounded-xl bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-brand-strong)] disabled:opacity-50'>
+            {saving ? t.admin.saving : t.admin.saveSettings}
+          </button>
+          {saved && <span className='text-xs text-green-600'>{t.common.saved}</span>}
+        </div>
+      </div>
+
+      {/* Run Now */}
+      <div className='rounded-2xl border border-white/70 bg-white/60 p-5 backdrop-blur'>
+        <div className='flex items-center gap-3'>
+          <button
+            type='button'
+            onClick={handleRunNow}
+            disabled={running}
+            className='rounded-xl bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-brand-strong)] disabled:opacity-50'>
+            {running ? t.admin.crawlRunning : t.admin.crawlRunNow}
+          </button>
+          {runResult && <span className='text-xs text-[var(--color-ink-soft)]'>{runResult}</span>}
+        </div>
+      </div>
+
+      {/* Anime Sources */}
+      <SourcesTable
+        title={t.admin.crawlCategoryAnime}
+        sources={animeSources}
+        onToggle={toggleSource}
+        onToggleAll={enabled => toggleCategory('anime', enabled)}
+        t={t}
+      />
+
+      {/* Real Sources */}
+      <SourcesTable
+        title={t.admin.crawlCategoryReal}
+        sources={realSources}
+        onToggle={toggleSource}
+        onToggleAll={enabled => toggleCategory('real', enabled)}
+        t={t}
+      />
+    </div>
+  )
+}
+
+function SourcesTable({
+  title,
+  sources,
+  onToggle,
+  onToggleAll,
+  t,
+}: {
+  title: string
+  sources: CrawlSource[]
+  onToggle: (id: string) => void
+  onToggleAll: (enabled: boolean) => void
+  t: ReturnType<typeof useLang>['t']
+}) {
+  const enabledCount = sources.filter(s => s.enabled).length
+
+  return (
+    <div className='rounded-2xl border border-white/70 bg-white/60 p-5 backdrop-blur'>
+      <div className='flex items-center justify-between'>
+        <h3 className='text-sm font-semibold text-[var(--color-ink)]'>
+          {title} ({enabledCount}/{sources.length})
+        </h3>
+        <div className='flex gap-2 text-xs'>
+          <button
+            type='button'
+            onClick={() => onToggleAll(true)}
+            className='text-[var(--color-brand)] hover:underline'>
+            {t.common.all}
+          </button>
+          <span className='text-[var(--color-ink-soft)]'>/</span>
+          <button
+            type='button'
+            onClick={() => onToggleAll(false)}
+            className='text-[var(--color-ink-soft)] hover:underline'>
+            {t.common.cancel}
+          </button>
+        </div>
+      </div>
+
+      <div className='mt-3 overflow-x-auto'>
+        <table className='w-full text-left text-xs'>
+          <thead>
+            <tr className='border-b border-[var(--color-border)] text-[var(--color-ink-soft)]'>
+              <th className='pb-2 pr-3 font-medium'>{t.admin.crawlSourceEnabled}</th>
+              <th className='pb-2 pr-3 font-medium'>{t.admin.crawlSourceName}</th>
+              <th className='pb-2 pr-3 font-medium'>{t.admin.crawlSourceUrl}</th>
+              <th className='pb-2 pr-3 font-medium'>{t.admin.crawlResponseType}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sources.map(source => (
+              <tr key={source.id} className='border-b border-[var(--color-border)] last:border-0'>
+                <td className='py-2 pr-3'>
+                  <input
+                    type='checkbox'
+                    checked={source.enabled}
+                    onChange={() => onToggle(source.id)}
+                    className='rounded'
+                  />
+                </td>
+                <td className='py-2 pr-3 text-[var(--color-ink)]'>{source.name}</td>
+                <td className='max-w-[300px] truncate py-2 pr-3 text-[var(--color-ink-soft)]'>{source.url}</td>
+                <td className='py-2 pr-3 text-[var(--color-ink-soft)]'>{source.responseType}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}

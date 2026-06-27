@@ -13,6 +13,7 @@ export function AdminNav() {
     { href: '/admin', label: t.admin.dashboard },
     { href: '/admin/images', label: t.admin.imageManage },
     { href: '/admin/users', label: t.admin.userManage },
+    { href: '/admin/crawl', label: t.admin.crawlManage },
     { href: '/admin/settings', label: t.admin.settings },
     { href: '/admin/logs', label: t.admin.logs },
   ]
