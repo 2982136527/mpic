@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { requireSession } from '@/lib/api/session'
 import { getAlbum, updateAlbum, deleteAlbum } from '@/lib/services/album-service'
 import { updateImageAlbum } from '@/lib/services/image-service'
-import { getJsonFile } from '@/lib/github/client'
+import { getPublicJsonFile } from '@/lib/github/client'
 import { appendLog } from '@/lib/services/log-service'
 import { createRequestId, ok, fail } from '@/lib/api/response'
 import { HttpError } from '@/lib/api/errors'
@@ -60,9 +60,9 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     }
 
     // Move all images in this album to ungrouped
-    const file = await getJsonFile<ImagesIndex>('data/images.json')
-    if (file) {
-      const imagesInAlbum = file.data.images.filter(img => img.albumId === id)
+    const data = await getPublicJsonFile<ImagesIndex>('data/images.json')
+    if (data) {
+      const imagesInAlbum = data.images.filter(img => img.albumId === id)
       for (const img of imagesInAlbum) {
         await updateImageAlbum(img.id, null)
       }

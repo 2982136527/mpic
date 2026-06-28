@@ -1,4 +1,4 @@
-import { getJsonFile, updateJsonWithRetry } from '@/lib/github/client'
+import { getPublicJsonFile, updateJsonWithRetry } from '@/lib/github/client'
 import { getSettings } from '@/lib/services/settings-service'
 import type { UserRecord, UsersIndex } from '@/types/user'
 
@@ -41,15 +41,15 @@ export async function ensureUser(login: string, avatarUrl: string): Promise<User
 }
 
 export async function getUser(login: string): Promise<UserRecord | null> {
-  const file = await getJsonFile<UsersIndex>(USERS_PATH)
-  if (!file) return null
-  return file.data.users.find(u => u.login === login) || null
+  const data = await getPublicJsonFile<UsersIndex>(USERS_PATH)
+  if (!data) return null
+  return data.users.find(u => u.login === login) || null
 }
 
 export async function listUsers(): Promise<UserRecord[]> {
-  const file = await getJsonFile<UsersIndex>(USERS_PATH)
-  if (!file) return []
-  return file.data.users
+  const data = await getPublicJsonFile<UsersIndex>(USERS_PATH)
+  if (!data) return []
+  return data.users
 }
 
 export async function updateUser(login: string, changes: Partial<UserRecord>): Promise<void> {

@@ -1,9 +1,10 @@
-import { getJsonFile, updateJsonWithRetry } from '@/lib/github/client'
+import { getPublicJsonFile, updateJsonWithRetry } from '@/lib/github/client'
 import type { AccessImageCounter, AccessLogEntry, AccessLogsIndex, AccessLogType, AccessOverview } from '@/types/access'
 
 const ACCESS_LOGS_PATH = 'data/access-logs.json'
 const MAX_ACCESS_LOGS = 2000
 const MAX_IMAGE_COUNTERS = 500
+const PERSISTED_ACCESS_TYPES = new Set<AccessLogType>(['random_api', 'image_meta_api'])
 
 function getAccessLogsRepo() {
   const repo = process.env.ACCESS_LOGS_GITHUB_REPO?.trim()
@@ -25,6 +26,7 @@ function emptyIndex(): AccessLogsIndex {
 export async function appendAccessLog(entry: Omit<AccessLogEntry, 'id' | 'createdAt'>): Promise<void> {
   const repo = getAccessLogsRepo()
   if (!repo) return
+  if (!PERSISTED_ACCESS_TYPES.has(entry.type)) return
 
   await updateJsonWithRetry<AccessLogsIndex>(ACCESS_LOGS_PATH, current => {
     const index = current || emptyIndex()
@@ -60,10 +62,10 @@ export async function listAccessLogs(params: { page?: number; pageSize?: number;
   const repo = getAccessLogsRepo()
   if (!repo) return { logs: [], total: 0 }
 
-  const file = await getJsonFile<AccessLogsIndex>(ACCESS_LOGS_PATH, repo)
-  if (!file) return { logs: [], total: 0 }
+  const data = await getPublicJsonFile<AccessLogsIndex>(ACCESS_LOGS_PATH, repo)
+  if (!data) return { logs: [], total: 0 }
 
-  const filtered = type ? file.data.logs.filter(log => log.type === type) : file.data.logs
+  const filtered = type ? data.logs.filter(log => log.type === type) : data.logs
   const start = (page - 1) * pageSize
   return {
     logs: filtered.slice(start, start + pageSize),
@@ -89,8 +91,8 @@ export async function getAccessOverview(): Promise<AccessOverview> {
     }
   }
 
-  const file = await getJsonFile<AccessLogsIndex>(ACCESS_LOGS_PATH, repo)
-  if (!file) {
+  const data = await getPublicJsonFile<AccessLogsIndex>(ACCESS_LOGS_PATH, repo)
+  if (!data) {
     return {
       enabled: true,
       total: 0,
@@ -106,7 +108,7 @@ export async function getAccessOverview(): Promise<AccessOverview> {
     }
   }
 
-  const { counters, logs } = file.data
+  const { counters, logs } = data
   const uniqueVisitors = new Set(logs.map(log => log.visitorKey).filter(Boolean)).size
   const loggedInCalls = logs.filter(log => log.actorRole !== 'guest').length
 

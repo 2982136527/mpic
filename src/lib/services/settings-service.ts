@@ -1,12 +1,12 @@
-import { getJsonFile, updateJsonWithRetry } from '@/lib/github/client'
+import { getPublicJsonFile, updateJsonWithRetry } from '@/lib/github/client'
 import { DEFAULT_SETTINGS, type SiteSettings } from '@/types/settings'
 
 const SETTINGS_PATH = 'data/settings.json'
 
 export async function getSettings(): Promise<SiteSettings> {
-  const file = await getJsonFile<SiteSettings>(SETTINGS_PATH)
-  if (!file) return DEFAULT_SETTINGS
-  return normalizeSettings(file.data)
+  const data = await getPublicJsonFile<SiteSettings>(SETTINGS_PATH)
+  if (!data) return DEFAULT_SETTINGS
+  return normalizeSettings(data)
 }
 
 export async function updateSettings(changes: Partial<SiteSettings>): Promise<SiteSettings> {

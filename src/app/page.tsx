@@ -8,7 +8,6 @@ import { TimelineBar } from '@/components/gallery/timeline-bar'
 import { ExifFilters } from '@/components/gallery/exif-filters'
 import { GalleryContent } from '@/components/gallery/gallery-content'
 import { EmptyState } from '@/components/gallery/empty-state'
-import { PublicVisitTracker } from '@/components/analytics/public-visit-tracker'
 import type { ImageRecord, ImageLinks } from '@/types/image'
 
 type ImageWithLinks = ImageRecord & { links: ImageLinks }
@@ -56,7 +55,6 @@ export default async function HomePage({ searchParams }: PageProps) {
     <div className='relative min-h-screen pb-8' data-theme-scope='public'>
       <BlurGradientBackground />
       <SiteHeader />
-      <PublicVisitTracker />
 
       <main className='mx-auto w-full max-w-6xl px-5 sm:px-8'>
         <div className='mb-4 animate-fade-in-up'>

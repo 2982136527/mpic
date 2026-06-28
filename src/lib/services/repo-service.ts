@@ -1,4 +1,4 @@
-import { getJsonFile, updateJsonWithRetry, createRepo, getRepoSize } from '@/lib/github/client'
+import { getJsonFile, getPublicJsonFile, updateJsonWithRetry, createRepo, getRepoSize } from '@/lib/github/client'
 import { getDefaultRepoName } from '@/lib/github/env'
 
 const REPOS_INDEX_PATH = 'data/repos.json'
@@ -25,8 +25,8 @@ function getBaseRepo(): string {
 
 // Initialize repos index if it doesn't exist, ensuring base repo is included
 async function ensureReposIndex(): Promise<ReposIndex> {
-  const file = await getJsonFile<ReposIndex>(REPOS_INDEX_PATH)
-  if (file) return file.data
+  const data = await getPublicJsonFile<ReposIndex>(REPOS_INDEX_PATH)
+  if (data) return data
 
   // Create initial index with the base repo
   const baseRepo = getBaseRepo()

@@ -1,4 +1,4 @@
-import { getJsonFile, updateJsonWithRetry } from '@/lib/github/client'
+import { getPublicJsonFile, updateJsonWithRetry } from '@/lib/github/client'
 import type { AlbumRecord, AlbumsIndex } from '@/types/album'
 import { randomBytes } from 'crypto'
 
@@ -13,14 +13,14 @@ function generateId(): string {
 }
 
 export async function listAlbums(ownerLogin: string): Promise<AlbumRecord[]> {
-  const file = await getJsonFile<AlbumsIndex>(ALBUMS_PATH)
-  const index = file?.data || emptyIndex()
+  const data = await getPublicJsonFile<AlbumsIndex>(ALBUMS_PATH)
+  const index = data || emptyIndex()
   return index.albums.filter(a => a.ownerLogin === ownerLogin)
 }
 
 export async function getAlbum(id: string): Promise<AlbumRecord | null> {
-  const file = await getJsonFile<AlbumsIndex>(ALBUMS_PATH)
-  const index = file?.data || emptyIndex()
+  const data = await getPublicJsonFile<AlbumsIndex>(ALBUMS_PATH)
+  const index = data || emptyIndex()
   return index.albums.find(a => a.id === id) || null
 }
 

@@ -2,6 +2,17 @@ import { getImageGithubEnv, getGithubEnvForRepo, type GithubRepoEnv } from '@/li
 import { HttpError } from '@/lib/api/errors'
 
 const API_BASE = 'https://api.github.com'
+const RAW_READ_TTL_MS = 15_000
+
+type CachedRawFile = {
+  expiresAt: number
+  value: string | null
+  promise?: Promise<string | null>
+}
+
+declare global {
+  var __mpicRawFileCache: Map<string, CachedRawFile> | undefined
+}
 
 type RequestOptions = {
   method?: string
@@ -15,6 +26,17 @@ function encodeSegments(input: string): string {
     .filter(Boolean)
     .map(encodeURIComponent)
     .join('/')
+}
+
+function getRawFileCache() {
+  if (!globalThis.__mpicRawFileCache) {
+    globalThis.__mpicRawFileCache = new Map()
+  }
+  return globalThis.__mpicRawFileCache
+}
+
+function buildRawFileUrl(env: GithubRepoEnv, path: string): string {
+  return `https://raw.githubusercontent.com/${encodeURIComponent(env.owner)}/${encodeURIComponent(env.repo)}/${encodeURIComponent(env.branch)}/${encodeSegments(path)}`
 }
 
 async function githubRequestWithEnv<T>(env: GithubRepoEnv, endpoint: string, options: RequestOptions = {}): Promise<{ data: T; status: number }> {
@@ -80,6 +102,12 @@ export async function getJsonFile<T>(path: string, repo?: string): Promise<{ sha
   const result = await getFile(path, repo)
   if (!result) return null
   return { sha: result.sha, data: JSON.parse(result.content) as T }
+}
+
+export async function getPublicJsonFile<T>(path: string, repo?: string): Promise<T | null> {
+  const text = await getPublicTextFile(path, repo)
+  if (!text) return null
+  return JSON.parse(text) as T
 }
 
 export async function upsertFile(params: {
@@ -182,4 +210,68 @@ export async function getRepoSize(repoName: string): Promise<number> {
   const env = getGithubEnvForRepo(repoName)
   const { data } = await githubRequestWithEnv<{ size?: number }>(env, '')
   return (data.size || 0) * 1024 // GitHub returns size in KB
+}
+
+async function getPublicTextFile(path: string, repo?: string): Promise<string | null> {
+  const env = repo ? getGithubEnvForRepo(repo) : getImageGithubEnv()
+  const key = `${env.owner}/${env.repo}/${env.branch}/${path}`
+  const cache = getRawFileCache()
+  const now = Date.now()
+  const cached = cache.get(key)
+
+  if (cached && cached.expiresAt > now && cached.value !== null) {
+    return cached.value
+  }
+
+  if (cached?.promise) {
+    return cached.promise
+  }
+
+  const promise = (async () => {
+    try {
+      const response = await fetch(buildRawFileUrl(env, path), {
+        headers: {
+          Accept: 'text/plain',
+        },
+        cache: 'no-store',
+      })
+
+      if (response.ok) {
+        const text = await response.text()
+        cache.set(key, {
+          value: text,
+          expiresAt: Date.now() + RAW_READ_TTL_MS,
+        })
+        return text
+      }
+    } catch {
+      // Fall back to the GitHub API below.
+    }
+
+    const apiFile = await getFile(path, repo)
+    const value = apiFile?.content || null
+    cache.set(key, {
+      value,
+      expiresAt: Date.now() + RAW_READ_TTL_MS,
+    })
+    return value
+  })()
+
+  cache.set(key, {
+    value: cached?.value ?? null,
+    expiresAt: cached?.expiresAt ?? 0,
+    promise,
+  })
+
+  try {
+    return await promise
+  } finally {
+    const latest = cache.get(key)
+    if (latest?.promise === promise) {
+      cache.set(key, {
+        value: latest.value,
+        expiresAt: latest.expiresAt,
+      })
+    }
+  }
 }
