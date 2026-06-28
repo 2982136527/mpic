@@ -142,6 +142,7 @@
 | `IMAGE_GITHUB_REPO` | 图片仓库名称 | 是 |
 | `IMAGE_GITHUB_BRANCH` | 图片仓库分支，默认 `main` | 否 |
 | `IMAGE_GITHUB_TOKEN` | 图片仓库 PAT | 是 |
+| `ACCESS_LOGS_GITHUB_REPO` | 访问日志私有仓库名称；不填则访问记录功能不会启用 | 否 |
 | `ADMIN_GITHUB_USERNAMES` | 管理员 GitHub 用户名，逗号分隔；不填则默认 `IMAGE_GITHUB_OWNER` | 否 |
 | `NEXT_PUBLIC_CDN_BASE_URL` | 自定义 CDN 前缀 | 否 |
 | `CRON_SECRET` | 仅在你要手动调用 `/api/cron/crawl` 时使用，默认部署不是必须 | 否 |
@@ -230,6 +231,7 @@ cp .env.example .env.local
 - `IMAGE_GITHUB_REPO`
 - `IMAGE_GITHUB_BRANCH`
 - `IMAGE_GITHUB_TOKEN`
+- `ACCESS_LOGS_GITHUB_REPO`
 - `NEXT_PUBLIC_CDN_BASE_URL`
 
 ### 2. 启动开发服务器

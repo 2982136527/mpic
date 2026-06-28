@@ -5,6 +5,11 @@ const ACCESS_LOGS_PATH = 'data/access-logs.json'
 const MAX_ACCESS_LOGS = 2000
 const MAX_IMAGE_COUNTERS = 500
 
+function getAccessLogsRepo() {
+  const repo = process.env.ACCESS_LOGS_GITHUB_REPO?.trim()
+  return repo || undefined
+}
+
 function emptyIndex(): AccessLogsIndex {
   return {
     version: 1,
@@ -18,6 +23,9 @@ function emptyIndex(): AccessLogsIndex {
 }
 
 export async function appendAccessLog(entry: Omit<AccessLogEntry, 'id' | 'createdAt'>): Promise<void> {
+  const repo = getAccessLogsRepo()
+  if (!repo) return
+
   await updateJsonWithRetry<AccessLogsIndex>(ACCESS_LOGS_PATH, current => {
     const index = current || emptyIndex()
     const createdAt = new Date().toISOString()
@@ -44,12 +52,15 @@ export async function appendAccessLog(entry: Omit<AccessLogEntry, 'id' | 'create
     }
 
     return index
-  })
+  }, 3, repo)
 }
 
 export async function listAccessLogs(params: { page?: number; pageSize?: number; type?: AccessLogType } = {}) {
   const { page = 1, pageSize = 100, type } = params
-  const file = await getJsonFile<AccessLogsIndex>(ACCESS_LOGS_PATH)
+  const repo = getAccessLogsRepo()
+  if (!repo) return { logs: [], total: 0 }
+
+  const file = await getJsonFile<AccessLogsIndex>(ACCESS_LOGS_PATH, repo)
   if (!file) return { logs: [], total: 0 }
 
   const filtered = type ? file.data.logs.filter(log => log.type === type) : file.data.logs
@@ -61,9 +72,27 @@ export async function listAccessLogs(params: { page?: number; pageSize?: number;
 }
 
 export async function getAccessOverview(): Promise<AccessOverview> {
-  const file = await getJsonFile<AccessLogsIndex>(ACCESS_LOGS_PATH)
+  const repo = getAccessLogsRepo()
+  if (!repo) {
+    return {
+      enabled: false,
+      total: 0,
+      pageViews: 0,
+      randomApiCalls: 0,
+      imagesApiCalls: 0,
+      imageMetaCalls: 0,
+      uniqueVisitors: 0,
+      loggedInCalls: 0,
+      retainedLogs: 0,
+      retentionLimit: MAX_ACCESS_LOGS,
+      topImages: [],
+    }
+  }
+
+  const file = await getJsonFile<AccessLogsIndex>(ACCESS_LOGS_PATH, repo)
   if (!file) {
     return {
+      enabled: true,
       total: 0,
       pageViews: 0,
       randomApiCalls: 0,
@@ -82,6 +111,7 @@ export async function getAccessOverview(): Promise<AccessOverview> {
   const loggedInCalls = logs.filter(log => log.actorRole !== 'guest').length
 
   return {
+    enabled: true,
     total: counters.total,
     pageViews: counters.byType.page_view || 0,
     randomApiCalls: counters.byType.random_api || 0,

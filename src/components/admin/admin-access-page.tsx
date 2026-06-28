@@ -46,10 +46,16 @@ export function AdminAccessPage({ overview, logs, total, page, pageSize, activeT
     <div className='space-y-5'>
       <section className='rounded-2xl border border-white/70 bg-white/60 p-4 backdrop-blur'>
         <h2 className='font-title text-3xl text-[var(--color-ink)]'>{t.admin.accessLogs}</h2>
-        <p className='mt-2 text-sm text-[var(--color-ink-soft)]'>{t.admin.accessCoverageNote}</p>
-        <p className='mt-1 text-xs text-[var(--color-ink-soft)]'>
-          {t.admin.accessRetentionNote(overview.retainedLogs, overview.retentionLimit)}
-        </p>
+        {overview.enabled ? (
+          <>
+            <p className='mt-2 text-sm text-[var(--color-ink-soft)]'>{t.admin.accessCoverageNote}</p>
+            <p className='mt-1 text-xs text-[var(--color-ink-soft)]'>
+              {t.admin.accessRetentionNote(overview.retainedLogs, overview.retentionLimit)}
+            </p>
+          </>
+        ) : (
+          <p className='mt-2 text-sm text-red-700'>{t.admin.accessDisabledNote}</p>
+        )}
       </section>
 
       <section className='grid gap-3 sm:grid-cols-2 xl:grid-cols-4'>
@@ -65,7 +71,9 @@ export function AdminAccessPage({ overview, logs, total, page, pageSize, activeT
         <div className='mb-4 flex items-center justify-between gap-3'>
           <div>
             <h3 className='font-title text-2xl text-[var(--color-ink)]'>{t.admin.accessTopImages}</h3>
-            <p className='text-sm text-[var(--color-ink-soft)]'>{t.admin.accessCoverageNote}</p>
+            <p className='text-sm text-[var(--color-ink-soft)]'>
+              {overview.enabled ? t.admin.accessCoverageNote : t.admin.accessDisabledNote}
+            </p>
           </div>
         </div>
 

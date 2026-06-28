@@ -46,6 +46,7 @@ export type AccessLogsIndex = {
 }
 
 export type AccessOverview = {
+  enabled: boolean
   total: number
   pageViews: number
   randomApiCalls: number

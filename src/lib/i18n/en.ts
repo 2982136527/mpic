@@ -258,6 +258,7 @@ const en = {
     crawlRunNowHint: 'Run Now starts one manual crawl immediately instead of waiting for the next GitHub Actions trigger.',
     accessLogs: 'Access Logs',
     accessCoverageNote: 'This view only counts page and API requests that hit this site. Actual image fetches served by external CDN, GitHub Raw, or third-party hosts are not included.',
+    accessDisabledNote: 'Private access-log storage is not configured. Set ACCESS_LOGS_GITHUB_REPO to a private repository to enable access logging.',
     accessRetentionNote: (retained: number, limit: number) =>
       `Keeping the latest ${retained} / ${limit} access records. "Unique visitors" and "logged-in requests" are calculated from this retained window.`,
     accessTotalHits: 'Total Hits',

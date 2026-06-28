@@ -255,6 +255,7 @@ const zh = {
     crawlRunNowHint: '立即采集会手动立刻执行一轮，不等待下一次 GitHub Actions 自动触发。',
     accessLogs: '访问记录',
     accessCoverageNote: '这里只统计命中本站的页面和 API 请求；外部 CDN、GitHub Raw 或第三方图床的实际图片访问不会出现在这里。',
+    accessDisabledNote: '当前未配置私有访问日志仓库，访问记录采集处于关闭状态。请在环境变量里设置 ACCESS_LOGS_GITHUB_REPO 指向私有仓库。',
     accessRetentionNote: (retained: number, limit: number) =>
       `当前保留最近 ${retained} / ${limit} 条访问记录；“独立访客”和“登录态请求”基于这部分保留日志统计。`,
     accessTotalHits: '累计命中',
