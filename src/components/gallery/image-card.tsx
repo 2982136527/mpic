@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ImageRecord, ImageLinks } from '@/types/image'
 
 type Props = {
@@ -11,8 +11,16 @@ type Props = {
 
 export function ImageCard({ image, onClick, priority = false }: Props) {
   const [loaded, setLoaded] = useState(false)
+  const imageRef = useRef<HTMLImageElement | null>(null)
   const width = image.width || 4
   const height = image.height || 5
+
+  useEffect(() => {
+    const node = imageRef.current
+    if (node?.complete) {
+      setLoaded(true)
+    }
+  }, [image.links.cdn])
 
   return (
     <button
@@ -25,6 +33,7 @@ export function ImageCard({ image, onClick, priority = false }: Props) {
         className={`absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.28),rgba(240,198,157,0.16))] transition-opacity duration-300 ${loaded ? 'opacity-0' : 'opacity-100'}`}
       />
       <img
+        ref={imageRef}
         src={image.links.cdn}
         alt={image.filename}
         loading={priority ? 'eager' : 'lazy'}
