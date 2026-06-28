@@ -9,10 +9,13 @@ export type ImageExif = {
   location?: { lat: number; lng: number }
 }
 
+export type ImageStorageKind = 'local' | 'external'
+
 export type ImageRecord = {
   id: string
   filename: string
-  path: string
+  title?: string
+  path?: string
   size: number
   width?: number
   height?: number
@@ -24,6 +27,13 @@ export type ImageRecord = {
   albumId?: string
   isPublic?: boolean
   exif?: ImageExif
+  tags?: string[]
+  storageKind?: ImageStorageKind
+  externalUrl?: string
+  sourceProvider?: string
+  sourceId?: string
+  sourcePageUrl?: string
+  sourceCreatedAt?: string
   repo?: string // storage repo name, e.g. "mpic-images". undefined = default repo
 }
 
@@ -37,4 +47,5 @@ export type ImageLinks = {
   cdn: string
   customCdn: string
   markdown: string
+  displayCandidates?: string[]
 }

@@ -12,7 +12,7 @@ type SourceFormState = {
   name: string
   url: string
   category: 'anime' | 'real'
-  responseType: 'redirect' | 'json' | 'direct'
+  responseType: 'redirect' | 'json' | 'direct' | 'pixiv'
   jsonPath: string
 }
 
@@ -370,11 +370,12 @@ export function AdminCrawlPage({ config }: Props) {
               </select>
               <select
                 value={sourceForm.responseType}
-                onChange={e => setSourceForm(f => ({ ...f, responseType: e.target.value as 'redirect' | 'json' | 'direct' }))}
+                onChange={e => setSourceForm(f => ({ ...f, responseType: e.target.value as 'redirect' | 'json' | 'direct' | 'pixiv' }))}
                 className='rounded-xl border border-[var(--color-border-strong)] bg-white px-3 py-2 text-sm text-[var(--color-ink)] outline-none'>
                 <option value='redirect'>redirect</option>
                 <option value='json'>json</option>
                 <option value='direct'>direct</option>
+                <option value='pixiv'>pixiv</option>
               </select>
             </div>
             {sourceForm.responseType === 'json' && (

@@ -4,7 +4,7 @@ export type CrawlSource = {
   url: string
   category: 'anime' | 'real'
   enabled: boolean
-  responseType: 'redirect' | 'json' | 'direct'
+  responseType: 'redirect' | 'json' | 'direct' | 'pixiv'
   jsonPath?: string
 }
 

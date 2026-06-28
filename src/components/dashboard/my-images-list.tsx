@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { ImageRecord, ImageLinks } from '@/types/image'
 import type { AlbumRecord } from '@/types/album'
 import { PublicImage } from '@/components/ui/public-image'
+import { getImageSourceLabel } from '@/lib/image-source'
 import { getPreferredPublicImageSource } from '@/lib/image-links'
 import { formatBytes } from '@/lib/utils'
 import { useLang } from '@/lib/i18n/context'
@@ -70,7 +71,7 @@ export function MyImagesList({ images, albums = [], onDelete, onTogglePrivacy, o
           <PublicImage links={image.links} alt='' loading='lazy' className='h-14 w-14 shrink-0 rounded-xl object-cover' />
           <div className='min-w-0 flex-1'>
             <div className='flex items-center gap-2'>
-              <p className='truncate text-sm font-medium text-[var(--color-ink)]'>{image.filename}</p>
+              <p className='truncate text-sm font-medium text-[var(--color-ink)]'>{image.title || image.filename}</p>
               <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
                 image.isPublic !== false
                   ? 'bg-green-100 text-green-700'
@@ -78,9 +79,14 @@ export function MyImagesList({ images, albums = [], onDelete, onTogglePrivacy, o
               }`}>
                 {image.isPublic !== false ? t.common.publicLabel : t.common.privateLabel}
               </span>
+              {image.sourceProvider && (
+                <span className='shrink-0 rounded-full bg-black/5 px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-ink-soft)]'>
+                  {getImageSourceLabel(image.sourceProvider)}
+                </span>
+              )}
             </div>
             <p className='text-xs text-[var(--color-ink-soft)]'>
-              {formatBytes(image.size)} · {new Date(image.createdAt).toLocaleDateString(locale)}
+              {image.storageKind === 'external' ? t.gallery.external : formatBytes(image.size)} · {new Date(image.createdAt).toLocaleDateString(locale)}
               {image.albumId && ` · ${getAlbumName(image.albumId)}`}
             </p>
           </div>

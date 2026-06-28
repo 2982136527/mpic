@@ -18,6 +18,8 @@ export async function POST(request: NextRequest) {
     const timer = setTimeout(() => controller.abort(), 10_000)
 
     try {
+      const parsedUrl = new URL(url)
+
       // First request: don't follow redirects
       const res = await fetch(url, {
         redirect: 'manual',
@@ -44,6 +46,15 @@ export async function POST(request: NextRequest) {
         try {
           const text = await res.text()
           const json = JSON.parse(text)
+          if (parsedUrl.hostname === 'www.pixiv.net' && parsedUrl.pathname === '/ajax/illust/discovery') {
+            return ok(requestId, {
+              responseType: 'pixiv',
+              status: res.status,
+              contentType,
+              jsonPreview: JSON.stringify(json).slice(0, 500),
+              suggestedPath: 'body.illusts',
+            })
+          }
           // Recursively search for the first image URL in the JSON tree
           const found = findImageUrl(json, '')
           return ok(requestId, {

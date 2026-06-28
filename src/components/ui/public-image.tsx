@@ -12,7 +12,7 @@ type Props = Omit<ImgHTMLAttributes<HTMLImageElement>, 'src'> & {
 export function PublicImage({ links, onError, ...props }: Props) {
   const sourceCandidates = useMemo(
     () => getPublicImageSourceCandidates(links),
-    [links.customCdn, links.cdn, links.raw],
+    [links.customCdn, links.cdn, links.raw, links.displayCandidates?.join('|')],
   )
   const [sourceIndex, setSourceIndex] = useState(0)
   const sourceSignature = sourceCandidates.join('|')

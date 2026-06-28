@@ -90,6 +90,15 @@ export function AdminSettingsForm({ settings, onSave }: Props) {
           />
           {t.admin.enableCompress}
         </label>
+        <label className='flex items-center gap-2 text-xs text-[var(--color-ink-soft)]'>
+          <input
+            type='checkbox'
+            checked={form.showPixivImages}
+            onChange={e => setForm(f => ({ ...f, showPixivImages: e.target.checked }))}
+            className='rounded'
+          />
+          {t.admin.showPixivImages}
+        </label>
       </div>
 
       <div className='space-y-4'>

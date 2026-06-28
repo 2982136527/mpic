@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import type { ImageRecord, ImageLinks } from '@/types/image'
+import { getImageSourceLabel } from '@/lib/image-source'
 import { getPublicImageSourceCandidates } from '@/lib/image-links'
 import { formatBytes } from '@/lib/utils'
 import { useLang } from '@/lib/i18n/context'
@@ -22,6 +23,8 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
   const sourceCandidates = getPublicImageSourceCandidates(image.links)
   const sourceSignature = sourceCandidates.join('|')
   const currentSrc = sourceCandidates[sourceIndex] || ''
+  const title = image.title || image.filename
+  const sourceLabel = getImageSourceLabel(image.sourceProvider)
 
   const copyToClipboard = useCallback(async (text: string, label: string) => {
     await navigator.clipboard.writeText(text)
@@ -49,12 +52,19 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
 
   const locale = lang === 'zh' ? 'zh-CN' : 'en-US'
 
-  const linkFormats = [
-    { label: t.gallery.cdn, value: image.links.cdn },
-    { label: t.gallery.original, value: image.links.raw },
-    ...(image.links.customCdn ? [{ label: t.gallery.customCdn, value: image.links.customCdn }] : []),
-    { label: 'Markdown', value: image.links.markdown },
-  ]
+  const linkFormats = image.storageKind === 'external'
+    ? [
+        ...(image.links.raw ? [{ label: t.gallery.directLink, value: image.links.raw }] : []),
+        ...(image.links.cdn ? [{ label: t.gallery.proxyLink, value: image.links.cdn }] : []),
+        ...(image.sourcePageUrl ? [{ label: t.gallery.sourcePage, value: image.sourcePageUrl }] : []),
+        ...(image.links.markdown ? [{ label: 'Markdown', value: image.links.markdown }] : []),
+      ]
+    : [
+        { label: t.gallery.cdn, value: image.links.cdn },
+        { label: t.gallery.original, value: image.links.raw },
+        ...(image.links.customCdn ? [{ label: t.gallery.customCdn, value: image.links.customCdn }] : []),
+        ...(image.links.markdown ? [{ label: 'Markdown', value: image.links.markdown }] : []),
+      ]
 
   return (
     <div
@@ -85,7 +95,7 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
         <div className='flex flex-1 items-center justify-center bg-black/5 p-4'>
           <img
             src={currentSrc}
-            alt={image.filename}
+            alt={title}
             onError={() => {
               if (sourceIndex < sourceCandidates.length - 1) {
                 setSourceIndex(prev => prev + 1)
@@ -101,14 +111,28 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
             <button type='button' onClick={onClose} className='text-xl text-[var(--color-ink-soft)] hover:text-[var(--color-ink)] transition'>&times;</button>
           </div>
 
+          {image.title && (
+            <>
+              <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>{t.gallery.title}</p>
+              <p className='mb-3 break-all text-sm text-[var(--color-ink)]'>{image.title}</p>
+            </>
+          )}
+
           <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>{t.gallery.filename}</p>
           <p className='mb-3 break-all text-sm text-[var(--color-ink)]'>{image.filename}</p>
 
           <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>{t.gallery.info}</p>
           <p className='mb-3 text-sm text-[var(--color-ink)]'>
-            {formatBytes(image.size)}
+            {image.storageKind === 'external' ? t.gallery.external : formatBytes(image.size)}
             {image.width && image.height && ` · ${image.width}×${image.height}`}
           </p>
+
+          {sourceLabel && (
+            <>
+              <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>{t.gallery.source}</p>
+              <p className='mb-3 text-sm text-[var(--color-ink)]'>{sourceLabel}</p>
+            </>
+          )}
 
           <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>{t.gallery.uploader}</p>
           <p className='mb-3 text-sm text-[var(--color-ink)]'>{image.uploaderLogin}</p>
@@ -154,6 +178,22 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
               <p className='mb-3 text-sm text-[var(--color-ink)]'>
                 {image.exif.location.lat.toFixed(6)}, {image.exif.location.lng.toFixed(6)}
               </p>
+            </>
+          )}
+
+          {image.tags && image.tags.length > 0 && (
+            <>
+              <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>{t.gallery.tags}</p>
+              <div className='mb-3 flex flex-wrap gap-1.5'>
+                {image.tags.map(tag => (
+                  <span
+                    key={tag}
+                    className='rounded-full bg-[var(--color-brand)]/10 px-2 py-1 text-[11px] text-[var(--color-brand-strong)]'
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
             </>
           )}
 

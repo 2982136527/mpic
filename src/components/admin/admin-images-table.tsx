@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { ImageRecord, ImageLinks } from '@/types/image'
+import { getImageSourceLabel } from '@/lib/image-source'
 import { PublicImage } from '@/components/ui/public-image'
 import { formatBytes } from '@/lib/utils'
 import { useLang } from '@/lib/i18n/context'
@@ -53,8 +54,16 @@ export function AdminImagesTable({ images: initialImages }: Props) {
                 <td className='px-3 py-2'>
                   <PublicImage links={image.links} alt='' loading='lazy' className='h-10 w-10 rounded-lg object-cover' />
                 </td>
-                <td className='max-w-[200px] truncate px-3 py-2 text-[var(--color-ink)]'>{image.filename}</td>
-                <td className='px-3 py-2 text-[var(--color-ink-soft)]'>{formatBytes(image.size)}</td>
+                <td className='max-w-[240px] px-3 py-2 text-[var(--color-ink)]'>
+                  <div className='truncate'>{image.title || image.filename}</div>
+                  <div className='truncate text-xs text-[var(--color-ink-soft)]'>
+                    {image.filename}
+                    {image.sourceProvider && ` · ${getImageSourceLabel(image.sourceProvider)}`}
+                  </div>
+                </td>
+                <td className='px-3 py-2 text-[var(--color-ink-soft)]'>
+                  {image.storageKind === 'external' ? t.gallery.external : formatBytes(image.size)}
+                </td>
                 <td className='px-3 py-2 text-[var(--color-ink-soft)]'>{image.uploaderLogin}</td>
                 <td className='px-3 py-2 text-[var(--color-ink-soft)]'>{new Date(image.createdAt).toLocaleDateString('zh-CN')}</td>
                 <td className='px-3 py-2'>

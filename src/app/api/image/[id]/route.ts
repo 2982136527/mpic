@@ -8,7 +8,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   try {
     const { id } = await params
-    const image = await getImage(id)
+    const image = await getImage(id, { publicOnly: true })
 
     if (!image) {
       return fail(requestId, 404, 'NOT_FOUND', 'Image not found')

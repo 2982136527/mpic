@@ -15,9 +15,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         id: result.record.id,
         filename: result.record.filename,
+        title: result.record.title,
         width: result.record.width,
         height: result.record.height,
         mimeType: result.record.mimeType,
+        storageKind: result.record.storageKind,
+        sourceProvider: result.record.sourceProvider,
+        sourcePageUrl: result.record.sourcePageUrl,
+        tags: result.record.tags || [],
         links: result.links,
       })
     }
@@ -27,7 +32,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No public image url available' }, { status: 500 })
     }
 
-    return NextResponse.redirect(url, 302)
+    const redirectUrl = url.startsWith('http') ? url : new URL(url, request.nextUrl.origin).toString()
+    return NextResponse.redirect(redirectUrl, 302)
   } catch (error) {
     console.error('[api][random][GET]', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

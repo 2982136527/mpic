@@ -82,6 +82,7 @@ export function GalleryContent({ initialImages, initialHasMore, search, yearMont
 
     try {
       const params = new URLSearchParams()
+      params.set('publicOnly', 'true')
       if (search) params.set('search', search)
       if (yearMonth) params.set('yearMonth', yearMonth)
       if (camera) params.set('camera', camera)

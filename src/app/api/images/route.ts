@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, Number(request.nextUrl.searchParams.get('page')) || 1)
     const pageSize = Math.min(100, Math.max(1, Number(request.nextUrl.searchParams.get('pageSize')) || 30))
     const search = request.nextUrl.searchParams.get('search') || undefined
-    const publicOnly = request.nextUrl.searchParams.get('publicOnly') === 'true'
+    const publicOnly = request.nextUrl.searchParams.get('publicOnly') !== 'false'
     const yearMonth = request.nextUrl.searchParams.get('yearMonth') || undefined
     const camera = request.nextUrl.searchParams.get('camera') || undefined
     const lens = request.nextUrl.searchParams.get('lens') || undefined
