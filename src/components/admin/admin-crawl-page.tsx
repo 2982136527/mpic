@@ -269,6 +269,16 @@ export function AdminCrawlPage({ config }: Props) {
   const statusBusy = crawlRunning
   const startDisabled = continuousBusy !== 'idle' || status.enabled
   const stopDisabled = continuousBusy !== 'idle' || !status.enabled
+  const continuation = status.continuation
+  const continuationStatus = continuation?.lastStatus || 'unknown'
+  const continuationStatusText = continuationStatus === 'scheduled'
+    ? t.admin.crawlContinuationStatusScheduled
+    : continuationStatus === 'accepted'
+      ? t.admin.crawlContinuationStatusAccepted
+      : continuationStatus === 'failed'
+        ? t.admin.crawlContinuationStatusFailed
+        : t.admin.crawlContinuationStatusUnknown
+  const continuationLink = continuation?.lastUrl?.startsWith('http') ? continuation.lastUrl : null
 
   return (
     <div className='space-y-6'>
@@ -326,6 +336,58 @@ export function AdminCrawlPage({ config }: Props) {
           </button>
           {saved && <span className='text-xs text-green-600'>{t.common.saved}</span>}
         </div>
+      </div>
+
+      <div className='rounded-2xl border border-white/70 bg-white/60 p-5 backdrop-blur'>
+        <div className='flex flex-wrap items-center justify-between gap-3'>
+          <h3 className='text-sm font-semibold text-[var(--color-ink)]'>{t.admin.crawlContinuationTitle}</h3>
+          <span className={`rounded-full px-3 py-1 text-xs font-medium ${
+            crawlRunning
+              ? 'bg-green-100 text-green-700'
+              : continuationStatus === 'failed'
+                ? 'bg-red-100 text-red-700'
+                : continuationStatus === 'scheduled'
+                  ? 'bg-amber-100 text-amber-700'
+                  : 'bg-slate-100 text-slate-700'
+          }`}>
+            {crawlRunning ? t.admin.crawlStatusRunning : continuationStatusText}
+          </span>
+        </div>
+
+        <div className='mt-4 grid gap-3 text-xs text-[var(--color-ink-soft)] md:grid-cols-2'>
+          <p>
+            {t.admin.crawlContinuationScheduledAt}：{continuation?.lastScheduledAt ? new Date(continuation.lastScheduledAt).toLocaleString() : '-'}
+          </p>
+          <p>
+            {t.admin.crawlContinuationAttemptAt}：{continuation?.lastAttemptAt ? new Date(continuation.lastAttemptAt).toLocaleString() : '-'}
+          </p>
+          <p>
+            {t.admin.crawlContinuationAcceptedAt}：{continuation?.lastAcceptedAt ? new Date(continuation.lastAcceptedAt).toLocaleString() : '-'}
+          </p>
+          <p>
+            {t.admin.crawlContinuationStatus}：{crawlRunning ? t.admin.crawlStatusRunning : continuationStatusText}
+          </p>
+        </div>
+
+        <p className='mt-3 text-xs text-[var(--color-ink-soft)]'>
+          {t.admin.crawlContinuationDetail}：{continuation?.lastDetail || '-'}
+        </p>
+
+        {continuationLink && (
+          <div className='mt-3'>
+            <a
+              href={continuationLink}
+              target='_blank'
+              rel='noreferrer'
+              className='text-xs font-medium text-[var(--color-brand)] hover:underline'>
+              {t.admin.crawlContinuationOpenRun}
+            </a>
+          </div>
+        )}
+
+        {continuationStatus === 'failed' && !crawlRunning && (
+          <p className='mt-3 text-xs text-red-500'>{t.admin.crawlContinuationAlertStalled}</p>
+        )}
       </div>
 
       {/* Run Now */}
