@@ -100,6 +100,7 @@
 | `IMAGE_GITHUB_TOKEN` | GitHub Personal Access Token | 是 |
 | `ADMIN_GITHUB_USERNAMES` | 自定义管理员，逗号分隔（可选） | 否 |
 | `NEXT_PUBLIC_CDN_BASE_URL` | 自定义 CDN 前缀，可选 | 否 |
+| `CRON_SECRET` | Vercel Cron 鉴权密钥，建议填写并与 Cron 请求头保持一致 | 否 |
 
 > 默认 `IMAGE_GITHUB_OWNER` 为管理员。如需指定其他管理员，设置 `ADMIN_GITHUB_USERNAMES`（会覆盖默认值）。
 

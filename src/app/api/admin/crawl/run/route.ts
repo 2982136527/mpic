@@ -1,8 +1,23 @@
-import { NextRequest } from 'next/server'
+import { after, NextRequest } from 'next/server'
 import { requireAdminSession } from '@/lib/api/session'
 import { runCrawl } from '@/lib/services/crawl-service'
 import { createRequestId, ok, fail } from '@/lib/api/response'
 import { HttpError } from '@/lib/api/errors'
+
+export const maxDuration = 300
+
+function scheduleNextCrawl(url: string, cronSecret?: string) {
+  after(async () => {
+    try {
+      await fetch(url, {
+        headers: cronSecret ? { Authorization: `Bearer ${cronSecret}` } : {},
+        cache: 'no-store',
+      })
+    } catch (error) {
+      console.error('[api][admin][crawl][run][continue]', error)
+    }
+  })
+}
 
 export async function POST(request: NextRequest) {
   const requestId = createRequestId()
@@ -14,10 +29,7 @@ export async function POST(request: NextRequest) {
     // Self-trigger next run if there's more to crawl
     if (result.shouldContinue) {
       const cronSecret = process.env.CRON_SECRET
-      const baseUrl = new URL(request.url).origin
-      fetch(`${baseUrl}/api/cron/crawl`, {
-        headers: cronSecret ? { Authorization: `Bearer ${cronSecret}` } : {},
-      }).catch(() => {})
+      scheduleNextCrawl(new URL('/api/cron/crawl', request.url).toString(), cronSecret)
     }
 
     return ok(requestId, { result: { fetched: result.fetched, duplicates: result.duplicates, errors: result.errors } })
