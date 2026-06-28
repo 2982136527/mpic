@@ -1,6 +1,7 @@
 import { getJsonFile, updateJsonWithRetry, uploadBinary, getFile, deleteFile } from '@/lib/github/client'
+import { fetchImageBuffer } from '@/lib/crawl/fetcher'
 import { getDefaultRepoName } from '@/lib/github/env'
-import { buildPixivProxyUrl } from '@/lib/pixiv'
+import { buildPixivProxyUrl, getPixivFetchHeaders } from '@/lib/pixiv'
 import { getActiveRepo, updateRepoSize } from '@/lib/services/repo-service'
 import { getSettings } from '@/lib/services/settings-service'
 import { updateUserStats } from '@/lib/services/user-service'
@@ -90,8 +91,12 @@ function buildLocalImageLinks(record: ImageRecord): ImageLinks {
 function buildExternalImageLinks(record: ImageRecord): ImageLinks {
   const raw = record.externalUrl || ''
   const cdn = record.sourceProvider === 'pixiv' && raw ? buildPixivProxyUrl(raw) : ''
-  const displayCandidates = uniqueUrls([raw, cdn])
-  const markdownTarget = displayCandidates[0] || raw || cdn
+  const displayCandidates = record.sourceProvider === 'pixiv'
+    ? uniqueUrls([cdn, raw])
+    : uniqueUrls([raw, cdn])
+  const markdownTarget = record.sourceProvider === 'pixiv'
+    ? (cdn || raw)
+    : (displayCandidates[0] || raw || cdn)
 
   return {
     raw,
@@ -222,8 +227,27 @@ export async function uploadImage(params: {
   uploaderLogin: string
   albumId?: string
   isPublic?: boolean
+  title?: string
+  tags?: string[]
+  sourceProvider?: string
+  sourceId?: string
+  sourcePageUrl?: string
+  sourceCreatedAt?: string
 }): Promise<{ record: ImageRecord; isDuplicate: boolean }> {
-  let { buffer, filename, mimeType, uploaderLogin, albumId, isPublic } = params
+  let {
+    buffer,
+    filename,
+    mimeType,
+    uploaderLogin,
+    albumId,
+    isPublic,
+    title,
+    tags,
+    sourceProvider,
+    sourceId,
+    sourcePageUrl,
+    sourceCreatedAt,
+  } = params
   const settings = await getSettings()
 
   if (settings.enableCompress && buffer.length > MAX_FILE_SIZE) {
@@ -237,9 +261,27 @@ export async function uploadImage(params: {
   }
 
   const hash = await hashBuffer(buffer)
-  const duplicate = await findDuplicateByHash(hash)
+  const existingFile = await getJsonFile<ImagesIndex>(IMAGES_PATH)
+  const existingImages = existingFile?.data.images || []
+  const sourceMatch = findImageBySource(existingImages, sourceProvider, sourceId)
+  const duplicate = existingImages.find(img => img.hash === hash && !img.deletedAt && img.id !== sourceMatch?.id) || null
   if (duplicate) {
     return { record: duplicate, isDuplicate: true }
+  }
+
+  if (sourceMatch && sourceMatch.storageKind !== 'external' && sourceMatch.hash === hash) {
+    const record = mergeSourceMetadata(sourceMatch, {
+      filename,
+      title,
+      tags,
+      sourceProvider,
+      sourceId,
+      sourcePageUrl,
+      sourceCreatedAt,
+    })
+
+    await replaceImageRecord(record)
+    return { record, isDuplicate: true }
   }
 
   const repoName = await getActiveRepo()
@@ -248,8 +290,9 @@ export async function uploadImage(params: {
   const now = new Date()
   const year = now.getFullYear()
   const month = String(now.getMonth() + 1).padStart(2, '0')
-  const id = generateId()
-  const path = `uploads/${year}/${month}/${id}.${ext}`
+  const id = sourceMatch?.id || generateId()
+  const storageKey = generateId()
+  const path = `uploads/${year}/${month}/${storageKey}.${ext}`
 
   await uploadBinary(path, buffer, `Upload ${filename}`, repoName)
 
@@ -266,7 +309,9 @@ export async function uploadImage(params: {
 
   const exif = await extractExif(buffer)
   const defaultRepo = getDefaultRepoName()
-  const record: ImageRecord = {
+  const oldSize = sourceMatch?.size || 0
+  const oldRepo = sourceMatch?.path ? (sourceMatch.repo || defaultRepo) : null
+  const record: ImageRecord = mergeSourceMetadata({
     id,
     filename,
     path,
@@ -275,19 +320,39 @@ export async function uploadImage(params: {
     height,
     mimeType,
     hash,
-    uploaderLogin,
-    createdAt: now.toISOString(),
-    ...(albumId ? { albumId } : {}),
-    ...(isPublic !== undefined ? { isPublic } : {}),
+    uploaderLogin: sourceMatch?.uploaderLogin || uploaderLogin,
+    createdAt: sourceMatch?.createdAt || now.toISOString(),
     ...(exif ? { exif } : {}),
     ...(repoName !== defaultRepo ? { repo: repoName } : {}),
+  }, {
+    albumId: albumId !== undefined ? albumId : sourceMatch?.albumId,
+    isPublic: isPublic !== undefined ? isPublic : sourceMatch?.isPublic,
+    title,
+    tags,
+    sourceProvider,
+    sourceId,
+    sourcePageUrl,
+    sourceCreatedAt,
+  })
+
+  if (sourceMatch) {
+    await replaceImageRecord(record)
+  } else {
+    await insertImageRecord(record)
   }
 
-  await insertImageRecord(record)
-  await updateUserStats(uploaderLogin, buffer.length, 1)
+  const userLogin = sourceMatch?.uploaderLogin || uploaderLogin
+  await updateUserStats(userLogin, buffer.length - oldSize, sourceMatch ? 0 : 1)
   await updateRepoSize(repoName, buffer.length)
 
-  return { record, isDuplicate: false }
+  if (oldRepo) {
+    await updateRepoSize(oldRepo, -oldSize)
+  }
+  if (sourceMatch?.path && sourceMatch.path !== path) {
+    await deleteGithubImage(sourceMatch.path, sourceMatch.repo, sourceMatch.filename).catch(() => {})
+  }
+
+  return { record, isDuplicate: Boolean(sourceMatch) }
 }
 
 export async function createExternalImage(params: {
@@ -375,6 +440,51 @@ export async function deleteImage(id: string, login: string, isAdmin: boolean): 
   if (image.path) {
     await updateRepoSize(image.repo || getDefaultRepoName(), -image.size)
   }
+}
+
+export async function mirrorExternalPixivImages(limit = 20): Promise<{ mirrored: number; failed: number }> {
+  const file = await getJsonFile<ImagesIndex>(IMAGES_PATH)
+  if (!file) return { mirrored: 0, failed: 0 }
+
+  const targets = file.data.images
+    .filter((image): image is ImageRecord & { externalUrl: string; sourceProvider: 'pixiv'; sourceId: string } =>
+      !image.deletedAt &&
+      image.storageKind === 'external' &&
+      image.sourceProvider === 'pixiv' &&
+      typeof image.externalUrl === 'string' &&
+      image.externalUrl.length > 0 &&
+      typeof image.sourceId === 'string' &&
+      image.sourceId.length > 0,
+    )
+    .slice(0, limit)
+
+  let mirrored = 0
+  let failed = 0
+
+  for (const image of targets) {
+    try {
+      const { buffer, mimeType } = await fetchImageBuffer(image.externalUrl, getPixivFetchHeaders())
+      await uploadImage({
+        buffer,
+        filename: image.filename,
+        mimeType,
+        uploaderLogin: image.uploaderLogin,
+        albumId: image.albumId,
+        isPublic: image.isPublic,
+        title: image.title,
+        tags: image.tags,
+        sourceProvider: image.sourceProvider,
+        sourceId: image.sourceId,
+        sourcePageUrl: image.sourcePageUrl,
+        sourceCreatedAt: image.sourceCreatedAt,
+      })
+      mirrored++
+    } catch {
+      failed++
+    }
+  }
+
+  return { mirrored, failed }
 }
 
 export async function getUserStats(login: string): Promise<{ imageCount: number; totalSize: number }> {
@@ -511,6 +621,84 @@ async function insertImageRecord(record: ImageRecord): Promise<void> {
   })
 }
 
+async function replaceImageRecord(record: ImageRecord): Promise<void> {
+  await updateJsonWithRetry<ImagesIndex>(IMAGES_PATH, current => {
+    const index = current || emptyIndex()
+    const existingIndex = index.images.findIndex(image => image.id === record.id)
+    if (existingIndex >= 0) {
+      index.images[existingIndex] = record
+    } else {
+      index.images.unshift(record)
+    }
+    return index
+  })
+}
+
+function findImageBySource(images: ImageRecord[], sourceProvider?: string, sourceId?: string): ImageRecord | null {
+  if (!sourceProvider || !sourceId) return null
+  return images.find(image => image.sourceProvider === sourceProvider && image.sourceId === sourceId && !image.deletedAt) || null
+}
+
+function mergeSourceMetadata(
+  base: ImageRecord,
+  meta: {
+    filename?: string
+    albumId?: string
+    isPublic?: boolean
+    title?: string
+    tags?: string[]
+    sourceProvider?: string
+    sourceId?: string
+    sourcePageUrl?: string
+    sourceCreatedAt?: string
+  },
+): ImageRecord {
+  const next: ImageRecord = { ...base }
+
+  if (meta.filename) next.filename = meta.filename
+  if (meta.albumId !== undefined) {
+    if (meta.albumId) next.albumId = meta.albumId
+    else delete next.albumId
+  }
+  if (meta.isPublic !== undefined) next.isPublic = meta.isPublic
+  if (meta.title !== undefined) {
+    if (meta.title) next.title = meta.title
+    else delete next.title
+  }
+
+  const normalizedTags = normalizeTags(meta.tags)
+  if (meta.tags !== undefined) {
+    if (normalizedTags.length > 0) next.tags = normalizedTags
+    else delete next.tags
+  }
+
+  if (meta.sourceProvider !== undefined) {
+    if (meta.sourceProvider) next.sourceProvider = meta.sourceProvider
+    else delete next.sourceProvider
+  }
+  if (meta.sourceId !== undefined) {
+    if (meta.sourceId) next.sourceId = meta.sourceId
+    else delete next.sourceId
+  }
+  if (meta.sourcePageUrl !== undefined) {
+    if (meta.sourcePageUrl) next.sourcePageUrl = meta.sourcePageUrl
+    else delete next.sourcePageUrl
+  }
+  if (meta.sourceCreatedAt !== undefined) {
+    if (meta.sourceCreatedAt) next.sourceCreatedAt = meta.sourceCreatedAt
+    else delete next.sourceCreatedAt
+  }
+
+  return next
+}
+
+async function deleteGithubImage(path: string, repo: string | undefined, filename: string): Promise<void> {
+  const fileOnGithub = await getFile(path, repo)
+  if (fileOnGithub) {
+    await deleteFile({ path, sha: fileOnGithub.sha, message: `Delete ${filename}`, repo })
+  }
+}
+
 async function extractExif(buffer: Buffer): Promise<ImageExif | undefined> {
   try {
     const exifr = await import('exifr')
@@ -564,6 +752,17 @@ function matchesImageSearch(image: ImageRecord, search: string): boolean {
   ]
 
   return candidates.some(value => (value ? value.toLowerCase().includes(search) : false))
+}
+
+function normalizeTags(tags?: string[]): string[] {
+  if (!Array.isArray(tags)) return []
+  return Array.from(
+    new Set(
+      tags
+        .map(tag => tag.trim())
+        .filter(Boolean),
+    ),
+  )
 }
 
 function isPubliclyVisible(image: ImageRecord, settings: Awaited<ReturnType<typeof getSettings>> | null): boolean {

@@ -2,7 +2,7 @@ import { getJsonFile, updateJsonWithRetry } from '@/lib/github/client'
 import { DEFAULT_CRAWL_CONFIG, type CrawlConfig, type CrawlSource, type CrawlLogEntry, type CrawlLogsIndex, type CrawlContinuationMonitor } from '@/types/crawl'
 import { getDefaultSources, mergeDefaultSources } from '@/lib/crawl/sources'
 import { fetchImages } from '@/lib/crawl/fetcher'
-import { createExternalImage, uploadImage } from '@/lib/services/image-service'
+import { mirrorExternalPixivImages, uploadImage } from '@/lib/services/image-service'
 
 const CRAWL_CONFIG_PATH = 'data/crawl-config.json'
 const CRAWL_LOGS_PATH = 'data/crawl-logs.json'
@@ -87,6 +87,8 @@ export async function runCrawl(force = false): Promise<{ fetched: number; duplic
   const startTime = Date.now()
 
   try {
+    await mirrorExternalPixivImages(BATCH_SIZE * 2).catch(() => {})
+
     // Process sources with concurrency limit, 5 images per source
     for (let i = 0; i < enabledSources.length; i += CONCURRENCY) {
       const batch = enabledSources.slice(i, i + CONCURRENCY)
@@ -148,32 +150,21 @@ async function processSource(source: CrawlSource, batchSize: number): Promise<{ 
 
   const results = await fetchImages(source, batchSize)
 
-  for (const [index, result] of results.entries()) {
+  for (const result of results) {
     try {
-      const uploadResult = result.kind === 'external'
-        ? await createExternalImage({
-            filename: result.filename,
-            mimeType: result.mimeType,
-            uploaderLogin: SYSTEM_LOGIN,
-            isPublic: true,
-            title: result.title,
-            width: result.width,
-            height: result.height,
-            tags: result.tags,
-            sourceProvider: result.sourceProvider,
-            sourceId: result.sourceId,
-            sourcePageUrl: result.sourcePageUrl,
-            sourceCreatedAt: result.sourceCreatedAt,
-            externalUrl: result.externalUrl,
-            hash: result.uniqueKey,
-          })
-        : await uploadImage({
-            buffer: result.buffer,
-            filename: `crawl_${source.id}_${Date.now()}_${index}.${extensionFromMimeType(result.mimeType)}`,
-            mimeType: result.mimeType,
-            uploaderLogin: SYSTEM_LOGIN,
-            isPublic: true,
-          })
+      const uploadResult = await uploadImage({
+        buffer: result.buffer,
+        filename: result.filename,
+        mimeType: result.mimeType,
+        uploaderLogin: SYSTEM_LOGIN,
+        isPublic: true,
+        title: result.title,
+        tags: result.tags,
+        sourceProvider: result.sourceProvider,
+        sourceId: result.sourceId,
+        sourcePageUrl: result.sourcePageUrl,
+        sourceCreatedAt: result.sourceCreatedAt,
+      })
 
       if (uploadResult.isDuplicate) {
         duplicates++
@@ -186,17 +177,4 @@ async function processSource(source: CrawlSource, batchSize: number): Promise<{ 
   }
 
   return { fetched, duplicates, errors }
-}
-
-function extensionFromMimeType(mimeType: string): string {
-  switch (mimeType) {
-    case 'image/png':
-      return 'png'
-    case 'image/webp':
-      return 'webp'
-    case 'image/gif':
-      return 'gif'
-    default:
-      return 'jpg'
-  }
 }

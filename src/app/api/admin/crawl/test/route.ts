@@ -46,13 +46,13 @@ export async function POST(request: NextRequest) {
         try {
           const text = await res.text()
           const json = JSON.parse(text)
-          if (parsedUrl.hostname === 'www.pixiv.net' && parsedUrl.pathname === '/ajax/illust/discovery') {
+          if (isPixivSourceUrl(parsedUrl)) {
             return ok(requestId, {
               responseType: 'pixiv',
               status: res.status,
               contentType,
               jsonPreview: JSON.stringify(json).slice(0, 500),
-              suggestedPath: 'body.illusts',
+              suggestedPath: parsedUrl.pathname === '/ranking.php' ? 'contents' : 'body.illusts',
             })
           }
           // Recursively search for the first image URL in the JSON tree
@@ -132,4 +132,11 @@ function findImageUrl(obj: unknown, path: string): { path: string; url: string }
   }
 
   return null
+}
+
+function isPixivSourceUrl(url: URL): boolean {
+  return url.hostname === 'www.pixiv.net' && (
+    url.pathname === '/ajax/illust/discovery' ||
+    url.pathname === '/ranking.php'
+  )
 }
