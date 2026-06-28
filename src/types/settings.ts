@@ -7,7 +7,7 @@ export type SiteSettings = {
   defaultQuotaBytes: number
   allowRegistration: boolean
   enableCompress: boolean
-  showPixivImages: boolean
+  enableRandomApi: boolean
 }
 
 export const DEFAULT_SETTINGS: SiteSettings = {
@@ -19,5 +19,5 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   defaultQuotaBytes: 100 * 1024 * 1024,
   allowRegistration: true,
   enableCompress: true,
-  showPixivImages: true,
+  enableRandomApi: true,
 }

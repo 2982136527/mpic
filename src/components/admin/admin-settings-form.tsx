@@ -93,11 +93,11 @@ export function AdminSettingsForm({ settings, onSave }: Props) {
         <label className='flex items-center gap-2 text-xs text-[var(--color-ink-soft)]'>
           <input
             type='checkbox'
-            checked={form.showPixivImages}
-            onChange={e => setForm(f => ({ ...f, showPixivImages: e.target.checked }))}
+            checked={form.enableRandomApi}
+            onChange={e => setForm(f => ({ ...f, enableRandomApi: e.target.checked }))}
             className='rounded'
           />
-          {t.admin.showPixivImages}
+          {t.admin.enableRandomApi}
         </label>
       </div>
 

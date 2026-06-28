@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRandomPublicImage } from '@/lib/services/image-service'
 import { getPreferredPublicImageSource } from '@/lib/image-links'
+import { getSettings } from '@/lib/services/settings-service'
 
 export async function GET(request: NextRequest) {
   try {
+    const settings = await getSettings()
+    if (!settings.enableRandomApi) {
+      return NextResponse.json({ error: 'Random image API is disabled' }, { status: 403 })
+    }
+
     const result = await getRandomPublicImage()
     if (!result) {
       return NextResponse.json({ error: 'No public images available' }, { status: 404 })

@@ -145,7 +145,7 @@ const en = {
     defaultQuota: 'Default Quota for New Users (MB)',
     allowRegister: 'Allow New User Registration',
     enableCompress: 'Enable Frontend Compression by Default',
-    showPixivImages: 'Show Pixiv Images in Public Gallery',
+    enableRandomApi: 'Enable Random Image API',
     cdnSettings: 'CDN Settings',
     cdnPrefix: 'Custom CDN Domain Prefix',
     saveSettings: 'Save Settings',

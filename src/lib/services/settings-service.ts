@@ -6,13 +6,26 @@ const SETTINGS_PATH = 'data/settings.json'
 export async function getSettings(): Promise<SiteSettings> {
   const file = await getJsonFile<SiteSettings>(SETTINGS_PATH)
   if (!file) return DEFAULT_SETTINGS
-  return { ...DEFAULT_SETTINGS, ...file.data }
+  return normalizeSettings(file.data)
 }
 
 export async function updateSettings(changes: Partial<SiteSettings>): Promise<SiteSettings> {
   await updateJsonWithRetry<SiteSettings>(SETTINGS_PATH, current => {
-    const base = current || DEFAULT_SETTINGS
-    return { ...base, ...changes, version: 1 }
+    return normalizeSettings({ ...(current || {}), ...changes })
   })
   return getSettings()
+}
+
+function normalizeSettings(input: Partial<SiteSettings> | null | undefined): SiteSettings {
+  return {
+    version: 1,
+    siteName: input?.siteName ?? DEFAULT_SETTINGS.siteName,
+    siteDescription: input?.siteDescription ?? DEFAULT_SETTINGS.siteDescription,
+    cdnBaseUrl: input?.cdnBaseUrl ?? DEFAULT_SETTINGS.cdnBaseUrl,
+    maxFileSizeBytes: input?.maxFileSizeBytes ?? DEFAULT_SETTINGS.maxFileSizeBytes,
+    defaultQuotaBytes: input?.defaultQuotaBytes ?? DEFAULT_SETTINGS.defaultQuotaBytes,
+    allowRegistration: input?.allowRegistration ?? DEFAULT_SETTINGS.allowRegistration,
+    enableCompress: input?.enableCompress ?? DEFAULT_SETTINGS.enableCompress,
+    enableRandomApi: input?.enableRandomApi ?? DEFAULT_SETTINGS.enableRandomApi,
+  }
 }

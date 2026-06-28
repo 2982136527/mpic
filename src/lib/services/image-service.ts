@@ -767,7 +767,6 @@ function normalizeTags(tags?: string[]): string[] {
 
 function isPubliclyVisible(image: ImageRecord, settings: Awaited<ReturnType<typeof getSettings>> | null): boolean {
   if (image.isPublic === false) return false
-  if (image.sourceProvider === 'pixiv' && settings && !settings.showPixivImages) return false
   return true
 }
 

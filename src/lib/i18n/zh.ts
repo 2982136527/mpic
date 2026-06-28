@@ -142,7 +142,7 @@ const zh = {
     defaultQuota: '新用户默认配额 (MB)',
     allowRegister: '允许新用户注册',
     enableCompress: '默认开启前端压缩',
-    showPixivImages: '公开相册显示 Pixiv 图片',
+    enableRandomApi: '启用随机图片接口',
     cdnSettings: 'CDN 设置',
     cdnPrefix: '自定义 CDN 域名前缀',
     saveSettings: '保存设置',
