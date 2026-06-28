@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import type { ImageRecord, ImageLinks } from '@/types/image'
+import { getPublicImageSourceCandidates } from '@/lib/image-links'
 import { formatBytes } from '@/lib/utils'
 import { useLang } from '@/lib/i18n/context'
 
@@ -16,7 +17,11 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
   const image = images[index]
   const [copied, setCopied] = useState<string | null>(null)
   const [entering, setEntering] = useState(false)
+  const [sourceIndex, setSourceIndex] = useState(0)
   const { t, lang } = useLang()
+  const sourceCandidates = getPublicImageSourceCandidates(image.links)
+  const sourceSignature = sourceCandidates.join('|')
+  const currentSrc = sourceCandidates[sourceIndex] || ''
 
   const copyToClipboard = useCallback(async (text: string, label: string) => {
     await navigator.clipboard.writeText(text)
@@ -27,6 +32,10 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
   useEffect(() => {
     requestAnimationFrame(() => setEntering(true))
   }, [])
+
+  useEffect(() => {
+    setSourceIndex(0)
+  }, [sourceSignature, index])
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -74,7 +83,16 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
         }}
       >
         <div className='flex flex-1 items-center justify-center bg-black/5 p-4'>
-          <img src={image.links.cdn} alt={image.filename} className='max-h-[70vh] max-w-full object-contain' />
+          <img
+            src={currentSrc}
+            alt={image.filename}
+            onError={() => {
+              if (sourceIndex < sourceCandidates.length - 1) {
+                setSourceIndex(prev => prev + 1)
+              }
+            }}
+            className='max-h-[70vh] max-w-full object-contain'
+          />
         </div>
 
         <div className='w-full overflow-y-auto p-5 md:w-80'>

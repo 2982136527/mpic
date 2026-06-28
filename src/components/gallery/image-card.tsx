@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { ImageRecord, ImageLinks } from '@/types/image'
+import { getPublicImageSourceCandidates } from '@/lib/image-links'
 
 type Props = {
   image: ImageRecord & { links: ImageLinks }
@@ -11,16 +12,25 @@ type Props = {
 
 export function ImageCard({ image, onClick, priority = false }: Props) {
   const [loaded, setLoaded] = useState(false)
+  const [sourceIndex, setSourceIndex] = useState(0)
   const imageRef = useRef<HTMLImageElement | null>(null)
+  const sourceCandidates = getPublicImageSourceCandidates(image.links)
+  const sourceSignature = sourceCandidates.join('|')
+  const currentSrc = sourceCandidates[sourceIndex] || ''
   const width = image.width || 4
   const height = image.height || 5
+
+  useEffect(() => {
+    setLoaded(false)
+    setSourceIndex(0)
+  }, [sourceSignature])
 
   useEffect(() => {
     const node = imageRef.current
     if (node?.complete) {
       setLoaded(true)
     }
-  }, [image.links.cdn])
+  }, [currentSrc])
 
   return (
     <button
@@ -34,7 +44,7 @@ export function ImageCard({ image, onClick, priority = false }: Props) {
       />
       <img
         ref={imageRef}
-        src={image.links.cdn}
+        src={currentSrc}
         alt={image.filename}
         loading={priority ? 'eager' : 'lazy'}
         decoding='async'
@@ -42,7 +52,14 @@ export function ImageCard({ image, onClick, priority = false }: Props) {
         width={width}
         height={height}
         onLoad={() => setLoaded(true)}
-        onError={() => setLoaded(true)}
+        onError={() => {
+          if (sourceIndex < sourceCandidates.length - 1) {
+            setLoaded(false)
+            setSourceIndex(prev => prev + 1)
+            return
+          }
+          setLoaded(true)
+        }}
         className={`relative block h-auto w-full transition-[opacity,transform] duration-500 group-hover:scale-[1.03] ${loaded ? 'opacity-100' : 'opacity-0'}`}
       />
     </button>

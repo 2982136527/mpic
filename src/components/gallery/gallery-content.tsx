@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { ImageRecord, ImageLinks } from '@/types/image'
 import { ImageGrid } from '@/components/gallery/image-grid'
+import { getPreferredPublicImageSource } from '@/lib/image-links'
 import { useLang } from '@/lib/i18n/context'
 
 type ImageWithLinks = ImageRecord & { links: ImageLinks }
@@ -35,7 +36,7 @@ export function GalleryContent({ initialImages, initialHasMore, search, yearMont
 
     window.setTimeout(() => {
       for (const image of items) {
-        const url = image.links.cdn
+        const url = getPreferredPublicImageSource(image.links)
         if (!url || preloadedUrlsRef.current.has(url)) continue
 
         preloadedUrlsRef.current.add(url)
