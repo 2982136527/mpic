@@ -196,7 +196,7 @@ const zh = {
     crawlStopContinuous: '关闭自动采集',
     crawlContinuousStarting: '开启中...',
     crawlContinuousStopping: '关闭中...',
-    crawlContinuousNote: '自动采集由 GitHub Actions 每 5 分钟触发一次。开启后无需保持本页面打开；关闭后新的调度会自动跳过。如需立刻执行，可点“立即采集”。',
+    crawlContinuousNote: '这里的“开启自动采集”只控制是否允许 GitHub Actions 每 5 分钟执行一轮。已开启不等于正在采集；只有任务实际跑起来时，状态才会显示“采集中...”。',
     crawlContinuousRetrying: '本轮采集失败，5 秒后自动重试。',
     crawlInterval: '采集间隔（分钟）',
     crawlBatchSize: '每次采集数量',
@@ -245,12 +245,14 @@ const zh = {
     crawlContinuationAttemptAt: '最近开始',
     crawlContinuationAcceptedAt: '最近完成',
     crawlContinuationDetail: '任务详情',
+    crawlContinuationNextRun: '下次触发',
     crawlContinuationStatusScheduled: '已触发',
     crawlContinuationStatusAccepted: '已完成',
     crawlContinuationStatusFailed: '失败',
     crawlContinuationStatusUnknown: '未知',
     crawlContinuationAlertStalled: '最近一次自动采集失败，当前也未在运行，请检查 GitHub Actions。',
     crawlContinuationOpenRun: '打开任务',
+    crawlRunNowHint: '立即采集会手动立刻执行一轮，不等待下一次 GitHub Actions 自动触发。',
   },
 }
 

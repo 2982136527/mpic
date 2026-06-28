@@ -199,7 +199,7 @@ const en = {
     crawlStopContinuous: 'Disable Auto Crawl',
     crawlContinuousStarting: 'Enabling...',
     crawlContinuousStopping: 'Disabling...',
-    crawlContinuousNote: 'Auto crawl is triggered by GitHub Actions every 5 minutes. You can close this page after enabling it; future schedules will be skipped after disabling it. Use "Run Now" for an immediate batch.',
+    crawlContinuousNote: 'Enable Auto Crawl only controls whether GitHub Actions is allowed to run every 5 minutes. Enabled does not mean currently running; the status changes to "Running..." only while a job is actually executing.',
     crawlContinuousRetrying: 'Current batch failed. Retrying in 5 seconds.',
     crawlInterval: 'Crawl Interval (minutes)',
     crawlBatchSize: 'Batch Size per Source',
@@ -248,12 +248,14 @@ const en = {
     crawlContinuationAttemptAt: 'Last Started',
     crawlContinuationAcceptedAt: 'Last Finished',
     crawlContinuationDetail: 'Job Detail',
+    crawlContinuationNextRun: 'Next Trigger',
     crawlContinuationStatusScheduled: 'Triggered',
     crawlContinuationStatusAccepted: 'Completed',
     crawlContinuationStatusFailed: 'Failed',
     crawlContinuationStatusUnknown: 'Unknown',
     crawlContinuationAlertStalled: 'The last auto crawl failed and nothing is running now. Check GitHub Actions.',
     crawlContinuationOpenRun: 'Open Run',
+    crawlRunNowHint: 'Run Now starts one manual crawl immediately instead of waiting for the next GitHub Actions trigger.',
   },
 }
 

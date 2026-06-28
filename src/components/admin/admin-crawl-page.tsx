@@ -279,6 +279,7 @@ export function AdminCrawlPage({ config }: Props) {
         ? t.admin.crawlContinuationStatusFailed
         : t.admin.crawlContinuationStatusUnknown
   const continuationLink = continuation?.lastUrl?.startsWith('http') ? continuation.lastUrl : null
+  const nextTriggerAt = status.enabled ? getNextScheduledRunAt() : null
 
   return (
     <div className='space-y-6'>
@@ -356,6 +357,9 @@ export function AdminCrawlPage({ config }: Props) {
 
         <div className='mt-4 grid gap-3 text-xs text-[var(--color-ink-soft)] md:grid-cols-2'>
           <p>
+            {t.admin.crawlContinuationNextRun}：{nextTriggerAt ? nextTriggerAt.toLocaleString() : t.admin.crawlStatusDisabled}
+          </p>
+          <p>
             {t.admin.crawlContinuationScheduledAt}：{continuation?.lastScheduledAt ? new Date(continuation.lastScheduledAt).toLocaleString() : '-'}
           </p>
           <p>
@@ -373,6 +377,21 @@ export function AdminCrawlPage({ config }: Props) {
           {t.admin.crawlContinuationDetail}：{continuation?.lastDetail || '-'}
         </p>
 
+        <div className='mt-4 flex flex-wrap items-center gap-3'>
+          <button
+            type='button'
+            onClick={handleRunNow}
+            disabled={running || crawlRunning}
+            className='rounded-xl bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-brand-strong)] disabled:opacity-50'>
+            {running ? t.admin.crawlRunning : t.admin.crawlRunNow}
+          </button>
+          {runResult && <span className='text-xs text-[var(--color-ink-soft)]'>{runResult}</span>}
+        </div>
+
+        <p className='mt-2 text-xs text-[var(--color-ink-soft)]'>
+          {t.admin.crawlRunNowHint}
+        </p>
+
         {continuationLink && (
           <div className='mt-3'>
             <a
@@ -388,20 +407,6 @@ export function AdminCrawlPage({ config }: Props) {
         {continuationStatus === 'failed' && !crawlRunning && (
           <p className='mt-3 text-xs text-red-500'>{t.admin.crawlContinuationAlertStalled}</p>
         )}
-      </div>
-
-      {/* Run Now */}
-      <div className='rounded-2xl border border-white/70 bg-white/60 p-5 backdrop-blur'>
-        <div className='flex items-center gap-3'>
-          <button
-            type='button'
-            onClick={handleRunNow}
-            disabled={running || crawlRunning}
-            className='rounded-xl bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-brand-strong)] disabled:opacity-50'>
-            {running ? t.admin.crawlRunning : t.admin.crawlRunNow}
-          </button>
-          {runResult && <span className='text-xs text-[var(--color-ink-soft)]'>{runResult}</span>}
-        </div>
       </div>
 
       {/* Add Source Button */}
@@ -551,6 +556,19 @@ export function AdminCrawlPage({ config }: Props) {
       </div>
     </div>
   )
+}
+
+function getNextScheduledRunAt(now = new Date()): Date {
+  const next = new Date(now)
+  next.setMilliseconds(0)
+  next.setSeconds(0)
+
+  const minute = next.getMinutes()
+  const remainder = minute % 5
+  const addMinutes = remainder === 0 ? 5 : 5 - remainder
+  next.setMinutes(minute + addMinutes)
+
+  return next
 }
 
 function SourcesTable({
