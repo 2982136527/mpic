@@ -199,7 +199,7 @@ const en = {
     crawlStopContinuous: 'Disable Auto Crawl',
     crawlContinuousStarting: 'Enabling...',
     crawlContinuousStopping: 'Disabling...',
-    crawlContinuousNote: 'Enable Auto Crawl only controls whether GitHub Actions is allowed to run every 5 minutes. Enabled does not mean currently running; the status changes to "Running..." only while a job is actually executing.',
+    crawlContinuousNote: 'Enable Auto Crawl only controls whether GitHub Actions is allowed to trigger every 5 minutes. Each trigger will keep chaining batches for about 4 minutes 30 seconds; enabled does not mean currently running, and the status changes to "Running..." only while a batch is actually executing.',
     crawlContinuousRetrying: 'Current batch failed. Retrying in 5 seconds.',
     crawlInterval: 'Crawl Interval (minutes)',
     crawlBatchSize: 'Batch Size per Source',

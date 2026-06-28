@@ -196,7 +196,7 @@ const zh = {
     crawlStopContinuous: '关闭自动采集',
     crawlContinuousStarting: '开启中...',
     crawlContinuousStopping: '关闭中...',
-    crawlContinuousNote: '这里的“开启自动采集”只控制是否允许 GitHub Actions 每 5 分钟执行一轮。已开启不等于正在采集；只有任务实际跑起来时，状态才会显示“采集中...”。',
+    crawlContinuousNote: '这里的“开启自动采集”只控制是否允许 GitHub Actions 每 5 分钟触发一次。每次触发后会在约 4 分 30 秒窗口内连续跑多批；已开启不等于正在采集，只有任务实际跑起来时才会显示“采集中...”。',
     crawlContinuousRetrying: '本轮采集失败，5 秒后自动重试。',
     crawlInterval: '采集间隔（分钟）',
     crawlBatchSize: '每次采集数量',

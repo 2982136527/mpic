@@ -8,7 +8,7 @@
 |------|------|
 | Vercel | 托管网站前台、后台管理页、登录、上传、公开 API |
 | GitHub 图片仓库 | 存储图片文件和 JSON 索引 |
-| GitHub Actions | 每 5 分钟触发一次自动采集 |
+| GitHub Actions | 每 5 分钟触发一次自动采集，每次在约 4 分 30 秒窗口内连续跑多批 |
 | GitHub OAuth | 管理员/用户登录 |
 
 自动采集现在不是靠打开后台页面续跑，也不是靠 Vercel Cron。
@@ -62,7 +62,7 @@
 - 内置多个随机图片 API 源
 - 支持 `redirect` / `json` / `direct` / `pixiv`
 - 管理员可自定义添加 / 编辑 / 删除采集源
-- GitHub Actions 每 5 分钟触发一次
+- GitHub Actions 每 5 分钟触发一次，每次尽量连续跑多批
 - 后台监控最近一次自动采集状态
 
 ### 公开 API
@@ -194,7 +194,7 @@
 
 ## 自动采集的工作方式
 
-自动采集不是常驻进程，而是 GitHub Actions 每 5 分钟触发一次：
+自动采集不是常驻进程，而是 GitHub Actions 每 5 分钟触发一次；每次触发后会在约 4 分 30 秒窗口内尽量连续跑多批：
 
 1. GitHub Actions 触发 `.github/workflows/crawl.yml`
 2. 执行 `pnpm crawl:once`
