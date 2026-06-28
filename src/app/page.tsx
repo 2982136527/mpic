@@ -65,7 +65,7 @@ export default async function HomePage({ searchParams }: PageProps) {
 
         {timeline.length > 0 && (
           <Suspense>
-            <div className='animate-fade-in-up animate-stagger-1'>
+            <div className='relative z-40 animate-fade-in-up animate-stagger-1'>
               <TimelineBar timeline={timeline} current={yearMonth} />
             </div>
           </Suspense>
@@ -73,7 +73,7 @@ export default async function HomePage({ searchParams }: PageProps) {
 
         {(cameras.length > 0 || lenses.length > 0) && (
           <Suspense>
-            <div className='animate-fade-in-up animate-stagger-2'>
+            <div className='relative z-40 animate-fade-in-up animate-stagger-2'>
               <ExifFilters cameras={cameras} lenses={lenses} currentCamera={camera} currentLens={lens} />
             </div>
           </Suspense>

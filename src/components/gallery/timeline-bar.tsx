@@ -54,7 +54,7 @@ export function TimelineBar({ timeline, current }: Props) {
   const currentCount = current ? timeline.find(item => item.yearMonth === current)?.count || 0 : timeline.reduce((s, item) => s + item.count, 0)
 
   return (
-    <div className='relative mb-4' ref={ref}>
+    <div className={`relative mb-4 ${open ? 'z-50' : 'z-10'}`} ref={ref}>
       <button
         type='button'
         onClick={() => setOpen(!open)}
@@ -74,7 +74,7 @@ export function TimelineBar({ timeline, current }: Props) {
 
       {open && (
         <div
-          className='absolute left-0 top-full z-20 mt-2 w-56 origin-top-left overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-white/95 shadow-xl backdrop-blur-xl'
+          className='absolute left-0 top-full z-[60] mt-2 w-56 origin-top-left overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-white/95 shadow-xl backdrop-blur-xl'
           style={{ animation: 'jelly-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' }}>
           <div className='max-h-72 overflow-y-auto p-1.5'>
             <button
