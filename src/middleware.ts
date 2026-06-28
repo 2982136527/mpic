@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
+import { isAdminLogin } from '@/lib/api/permissions'
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
+  const search = request.nextUrl.search
   const canonicalRedirect = getCanonicalRedirect(request)
 
   if (canonicalRedirect) {
@@ -32,11 +34,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  const isAdminPage = pathname.startsWith('/admin')
+  const isAdminApi = pathname === '/api/admin' || pathname.startsWith('/api/admin/')
   const requiresAuth = pathname.startsWith('/dashboard')
-    || pathname.startsWith('/admin')
+    || isAdminPage
     || pathname === '/api/upload'
     || pathname.startsWith('/api/user/')
-    || pathname.startsWith('/api/admin/')
+    || isAdminApi
 
   if (!requiresAuth) {
     return NextResponse.next()
@@ -51,8 +55,19 @@ export async function middleware(request: NextRequest) {
       )
     }
     const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('callbackUrl', pathname)
+    loginUrl.searchParams.set('callbackUrl', `${pathname}${search}`)
     return NextResponse.redirect(loginUrl)
+  }
+
+  if ((isAdminPage || isAdminApi) && !isAdminLogin(token.login)) {
+    if (isAdminApi) {
+      return NextResponse.json(
+        { error: { code: 'FORBIDDEN', message: 'Admin access denied' } },
+        { status: 403 },
+      )
+    }
+
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   return NextResponse.next()
