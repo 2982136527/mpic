@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import type { ImageRecord, ImageLinks } from '@/types/image'
 import type { AlbumRecord } from '@/types/album'
+import { PublicImage } from '@/components/ui/public-image'
+import { getPreferredPublicImageSource } from '@/lib/image-links'
 import { formatBytes } from '@/lib/utils'
 import { useLang } from '@/lib/i18n/context'
 
@@ -65,7 +67,7 @@ export function MyImagesList({ images, albums = [], onDelete, onTogglePrivacy, o
     <div className='space-y-2'>
       {images.map(image => (
         <div key={image.id} className='flex items-center gap-3 rounded-2xl border border-white/70 bg-white/60 p-3 backdrop-blur'>
-          <img src={image.links.cdn} alt='' className='h-14 w-14 shrink-0 rounded-xl object-cover' />
+          <PublicImage links={image.links} alt='' loading='lazy' className='h-14 w-14 shrink-0 rounded-xl object-cover' />
           <div className='min-w-0 flex-1'>
             <div className='flex items-center gap-2'>
               <p className='truncate text-sm font-medium text-[var(--color-ink)]'>{image.filename}</p>
@@ -126,7 +128,7 @@ export function MyImagesList({ images, albums = [], onDelete, onTogglePrivacy, o
             )}
             <button
               type='button'
-              onClick={() => handleCopy(image.links.cdn, image.id)}
+              onClick={() => handleCopy(getPreferredPublicImageSource(image.links), image.id)}
               className='rounded-lg border border-[var(--color-border-strong)] bg-white px-2 py-1 text-xs text-[var(--color-ink)] transition hover:border-[var(--color-brand)]'>
               {copied === image.id ? t.common.copied : t.common.copyLink}
             </button>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { ImageRecord, ImageLinks } from '@/types/image'
+import { PublicImage } from '@/components/ui/public-image'
 import { formatBytes } from '@/lib/utils'
 import { useLang } from '@/lib/i18n/context'
 
@@ -50,7 +51,7 @@ export function AdminImagesTable({ images: initialImages }: Props) {
             images.map(image => (
               <tr key={image.id} className='border-t border-white/70'>
                 <td className='px-3 py-2'>
-                  <img src={image.links.cdn} alt='' className='h-10 w-10 rounded-lg object-cover' />
+                  <PublicImage links={image.links} alt='' loading='lazy' className='h-10 w-10 rounded-lg object-cover' />
                 </td>
                 <td className='max-w-[200px] truncate px-3 py-2 text-[var(--color-ink)]'>{image.filename}</td>
                 <td className='px-3 py-2 text-[var(--color-ink-soft)]'>{formatBytes(image.size)}</td>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRandomPublicImage } from '@/lib/services/image-service'
+import { getPreferredPublicImageSource } from '@/lib/image-links'
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,8 +22,11 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Default: 302 redirect to CDN image
-    const url = result.links.customCdn || result.links.cdn
+    const url = getPreferredPublicImageSource(result.links)
+    if (!url) {
+      return NextResponse.json({ error: 'No public image url available' }, { status: 500 })
+    }
+
     return NextResponse.redirect(url, 302)
   } catch (error) {
     console.error('[api][random][GET]', error)
