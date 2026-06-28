@@ -5,12 +5,13 @@ import { GlassCard } from '@/components/ui/glass-card'
 import { LoginForm } from '@/components/auth/login-form'
 
 type LoginPageProps = {
-  searchParams: Promise<{ callbackUrl?: string }>
+  searchParams: Promise<{ callbackUrl?: string; error?: string }>
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams
   const callbackUrl = params.callbackUrl || '/dashboard'
+  const error = params.error
   const session = await getAuthSession()
 
   if (session?.user?.login) {
@@ -23,7 +24,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
       <div className='mx-auto flex min-h-screen max-w-xl items-center justify-center px-5'>
         <GlassCard className='w-full'>
-          <LoginForm callbackUrl={callbackUrl} />
+          <LoginForm callbackUrl={callbackUrl} error={error} />
         </GlassCard>
       </div>
     </div>

@@ -42,6 +42,15 @@ const zh = {
     githubSignIn: '使用 GitHub 登录',
     loginTitle: '登录 MPic',
     loginDesc: '使用 GitHub 账号登录后即可上传和管理图片。',
+    loginFailed: '登录失败，请重试。',
+    githubSigninFailed: 'GitHub 登录发起失败。',
+    accessDenied: '登录被拒绝。',
+    callbackFailed: '登录回调失败。',
+    oauthCallbackFailed: 'GitHub 授权回调失败。',
+    oauthSigninFailed: 'GitHub 授权请求失败。',
+    oauthCreateAccountFailed: 'GitHub 账号创建失败。',
+    oauthAccountNotLinked: '该邮箱已绑定其他登录方式。',
+    configurationFailed: '登录配置有误，请联系管理员。',
   },
 
   gallery: {

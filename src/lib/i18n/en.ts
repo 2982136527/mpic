@@ -42,6 +42,15 @@ const en = {
     githubSignIn: 'Sign in with GitHub',
     loginTitle: 'Login to MPic',
     loginDesc: 'Sign in with your GitHub account to upload and manage images.',
+    loginFailed: 'Login failed. Please try again.',
+    githubSigninFailed: 'Failed to start GitHub sign-in.',
+    accessDenied: 'Access denied.',
+    callbackFailed: 'Login callback failed.',
+    oauthCallbackFailed: 'GitHub OAuth callback failed.',
+    oauthSigninFailed: 'GitHub OAuth sign-in request failed.',
+    oauthCreateAccountFailed: 'Failed to create the GitHub account session.',
+    oauthAccountNotLinked: 'This email is already linked to a different sign-in method.',
+    configurationFailed: 'Login configuration is invalid. Contact the administrator.',
   },
 
   gallery: {
