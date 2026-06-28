@@ -1,6 +1,6 @@
 import { after } from 'next/server'
 
-const CONTINUE_RETRY_DELAYS_MS = [2000, 8000, 20000]
+const CONTINUE_RETRY_DELAYS_MS = [2000, 8000, 20000, 45000]
 
 type TriggerResult = {
   accepted: boolean
@@ -15,16 +15,6 @@ function getContinuationUrls(requestUrl: string): string[] {
   const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, '')
   if (configuredSiteUrl) {
     urls.add(new URL('/api/cron/crawl', configuredSiteUrl).toString())
-  }
-
-  const deploymentUrl = process.env.VERCEL_URL?.trim()
-  if (deploymentUrl) {
-    urls.add(`https://${deploymentUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}/api/cron/crawl`)
-  }
-
-  const productionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim()
-  if (productionUrl) {
-    urls.add(`https://${productionUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}/api/cron/crawl`)
   }
 
   return Array.from(urls)
