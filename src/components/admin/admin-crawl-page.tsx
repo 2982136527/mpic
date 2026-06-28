@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { CrawlConfig, CrawlSource, CrawlLogEntry } from '@/types/crawl'
 import { useLang } from '@/lib/i18n/context'
 
@@ -39,16 +39,22 @@ export function AdminCrawlPage({ config }: Props) {
   const [testResult, setTestResult] = useState<string | null>(null)
   const [logs, setLogs] = useState<CrawlLogEntry[]>([])
   const [crawlRunning, setCrawlRunning] = useState(config.running || false)
+  const [continuousRunning, setContinuousRunning] = useState(false)
+  const [continuousBusy, setContinuousBusy] = useState<'idle' | 'starting' | 'stopping'>('idle')
+  const [loopNotice, setLoopNotice] = useState<string | null>(null)
+  const continuousWantedRef = useRef(false)
+  const continuousLoopRef = useRef<Promise<void> | null>(null)
 
   const fetchStatus = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/crawl')
-      if (!res.ok) return
+      if (!res.ok) return null
       const data = await res.json()
       setStatus(data.config)
       setCrawlRunning(data.config.running || false)
+      return data.config as CrawlConfig
     } catch {
-      // ignore
+      return null
     }
   }, [])
 
@@ -66,24 +72,94 @@ export function AdminCrawlPage({ config }: Props) {
   useEffect(() => {
     fetchStatus()
     fetchLogs()
-    // Poll status every 5s when running
-    if (crawlRunning) {
+    if (crawlRunning || continuousRunning || status.enabled) {
       const timer = setInterval(() => { fetchStatus(); fetchLogs() }, 5000)
       return () => clearInterval(timer)
     }
-  }, [fetchLogs, fetchStatus, crawlRunning])
+  }, [crawlRunning, continuousRunning, fetchLogs, fetchStatus, status.enabled])
 
-  // Auto-resume crawl if enabled but not running (e.g. after redeployment)
-  useEffect(() => {
-    if (config.enabled && !config.running) {
-      fetch('/api/admin/crawl/run', { method: 'POST' }).then(() => {
-        setCrawlRunning(true)
-        fetchStatus()
-        fetchLogs()
-      }).catch(() => {})
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  const updateEnabled = useCallback(async (enabled: boolean) => {
+    const res = await fetch('/api/admin/crawl', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled }),
+    })
+    if (!res.ok) throw new Error('Save failed')
+    const data = await res.json()
+    setForm(f => ({ ...f, enabled: data.config.enabled }))
+    setStatus(data.config)
+    setCrawlRunning(data.config.running || false)
+    return data.config as CrawlConfig
   }, [])
+
+  const runBatch = useCallback(async (force: boolean) => {
+    const res = await fetch('/api/admin/crawl/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(force ? { force: true } : {}),
+    })
+    if (!res.ok) throw new Error('Run failed')
+    const data = await res.json()
+    return data.result as { fetched: number; duplicates: number; errors: number; shouldContinue: boolean }
+  }, [])
+
+  const runContinuousLoop = useCallback(() => {
+    if (continuousLoopRef.current) return continuousLoopRef.current
+
+    continuousLoopRef.current = (async () => {
+      setContinuousRunning(true)
+      setLoopNotice(null)
+
+      while (continuousWantedRef.current) {
+        try {
+          const result = await runBatch(false)
+          setRunResult(t.admin.crawlResults(result.fetched, result.duplicates, result.errors))
+          setLoopNotice(null)
+
+          const latestConfig = await fetchStatus()
+          await fetchLogs()
+
+          if (!continuousWantedRef.current || !latestConfig?.enabled) {
+            break
+          }
+
+          if (!result.shouldContinue) {
+            await wait(5000)
+            continue
+          }
+
+          await wait(1500)
+        } catch {
+          setLoopNotice(t.admin.crawlContinuousRetrying)
+          const latestConfig = await fetchStatus()
+          await fetchLogs()
+          if (!continuousWantedRef.current || !latestConfig?.enabled) {
+            break
+          }
+          await wait(5000)
+        }
+      }
+
+      setContinuousRunning(false)
+      setContinuousBusy('idle')
+    })().finally(() => {
+      continuousLoopRef.current = null
+    })
+
+    return continuousLoopRef.current
+  }, [fetchLogs, fetchStatus, runBatch, t.admin])
+
+  useEffect(() => {
+    if (status.enabled && !continuousWantedRef.current) {
+      continuousWantedRef.current = true
+      void runContinuousLoop()
+      return
+    }
+
+    if (!status.enabled) {
+      continuousWantedRef.current = false
+    }
+  }, [runContinuousLoop, status.enabled])
 
   const handleSave = async () => {
     setSaving(true)
@@ -110,13 +186,9 @@ export function AdminCrawlPage({ config }: Props) {
 
   const handleRunNow = async () => {
     setRunning(true)
-    setCrawlRunning(true)
     setRunResult(null)
     try {
-      const res = await fetch('/api/admin/crawl/run', { method: 'POST' })
-      if (!res.ok) throw new Error('Run failed')
-      const data = await res.json()
-      const r = data.result
+      const r = await runBatch(true)
       setRunResult(t.admin.crawlResults(r.fetched, r.duplicates, r.errors))
       fetchLogs()
       fetchStatus()
@@ -124,7 +196,37 @@ export function AdminCrawlPage({ config }: Props) {
       alert(t.common.operationFailed)
     } finally {
       setRunning(false)
-      setCrawlRunning(false)
+    }
+  }
+
+  const handleStartContinuous = async () => {
+    setContinuousBusy('starting')
+    setRunResult(null)
+    setLoopNotice(null)
+    try {
+      continuousWantedRef.current = true
+      await updateEnabled(true)
+      void runContinuousLoop()
+      setContinuousBusy('idle')
+    } catch {
+      continuousWantedRef.current = false
+      alert(t.admin.saveFailed)
+      setContinuousBusy('idle')
+    }
+  }
+
+  const handleStopContinuous = async () => {
+    setContinuousBusy('stopping')
+    continuousWantedRef.current = false
+    setLoopNotice(null)
+    try {
+      await updateEnabled(false)
+      await fetchStatus()
+      await fetchLogs()
+      setContinuousBusy('idle')
+    } catch {
+      alert(t.admin.saveFailed)
+      setContinuousBusy('idle')
     }
   }
 
@@ -230,29 +332,17 @@ export function AdminCrawlPage({ config }: Props) {
 
   const animeSources = form.sources.filter(s => s.category === 'anime')
   const realSources = form.sources.filter(s => s.category === 'real')
-  const continuation = status.continuation
-  const continuationStatus = continuation?.lastStatus || 'unknown'
-  const continuationStatusLabel = continuationStatus === 'scheduled'
-    ? t.admin.crawlContinuationStatusScheduled
-    : continuationStatus === 'accepted'
-      ? t.admin.crawlContinuationStatusAccepted
-      : continuationStatus === 'failed'
-        ? t.admin.crawlContinuationStatusFailed
-        : t.admin.crawlContinuationStatusUnknown
-  const continuationStatusClass = continuationStatus === 'accepted'
-    ? 'text-green-600'
-    : continuationStatus === 'failed'
-      ? 'text-red-500'
-      : 'text-[var(--color-ink-soft)]'
-  const continuationStalled = status.enabled && !crawlRunning && continuation?.lastStatus === 'failed'
+  const statusBusy = crawlRunning || continuousRunning
+  const startDisabled = continuousBusy !== 'idle' || status.enabled
+  const stopDisabled = continuousBusy !== 'idle' || !status.enabled
 
   return (
     <div className='space-y-6'>
       {/* Status Bar */}
       <div className='flex items-center gap-3 rounded-2xl border border-white/70 bg-white/60 px-5 py-3 backdrop-blur'>
-        <span className={`inline-block h-2.5 w-2.5 rounded-full ${crawlRunning ? 'animate-pulse bg-green-500' : status.enabled ? 'bg-yellow-500' : 'bg-gray-400'}`} />
+        <span className={`inline-block h-2.5 w-2.5 rounded-full ${statusBusy ? 'animate-pulse bg-green-500' : status.enabled ? 'bg-yellow-500' : 'bg-gray-400'}`} />
         <span className='text-sm text-[var(--color-ink)]'>
-          {crawlRunning
+          {statusBusy
             ? t.admin.crawlStatusRunning
             : status.enabled
               ? t.admin.crawlStatusEnabled
@@ -263,15 +353,26 @@ export function AdminCrawlPage({ config }: Props) {
       {/* Global Settings */}
       <div className='rounded-2xl border border-white/70 bg-white/60 p-5 backdrop-blur'>
         <div className='space-y-4'>
-          <label className='flex items-center gap-2 text-xs text-[var(--color-ink-soft)]'>
-            <input
-              type='checkbox'
-              checked={form.enabled}
-              onChange={e => setForm(f => ({ ...f, enabled: e.target.checked }))}
-              className='rounded'
-            />
-            {t.admin.crawlEnabled}
-          </label>
+          <div className='flex flex-wrap items-center gap-3'>
+            <button
+              type='button'
+              onClick={handleStartContinuous}
+              disabled={startDisabled}
+              className='rounded-xl bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-brand-strong)] disabled:opacity-50'>
+              {continuousBusy === 'starting' ? t.admin.crawlContinuousStarting : t.admin.crawlStartContinuous}
+            </button>
+            <button
+              type='button'
+              onClick={handleStopContinuous}
+              disabled={stopDisabled}
+              className='rounded-xl border border-[var(--color-border-strong)] bg-white px-5 py-2 text-sm font-semibold text-[var(--color-ink)] transition hover:border-[var(--color-brand)] disabled:opacity-50'>
+              {continuousBusy === 'stopping' ? t.admin.crawlContinuousStopping : t.admin.crawlStopContinuous}
+            </button>
+          </div>
+
+          <p className='text-xs text-[var(--color-ink-soft)]'>
+            {t.admin.crawlContinuousNote}
+          </p>
 
           <p className='text-xs text-[var(--color-ink-soft)]'>
             {t.admin.crawlLastRun}：{status.lastRunAt ? new Date(status.lastRunAt).toLocaleString() : t.admin.crawlNeverRun}
@@ -279,19 +380,9 @@ export function AdminCrawlPage({ config }: Props) {
           <p className='text-xs text-[var(--color-ink-soft)]'>
             {t.admin.crawlRunningSince}：{status.runningSince ? new Date(status.runningSince).toLocaleString() : '-'}
           </p>
-          <div className='rounded-xl border border-[var(--color-border)] bg-white/70 px-3 py-3 text-xs text-[var(--color-ink-soft)]'>
-            <p className='font-medium text-[var(--color-ink)]'>{t.admin.crawlContinuationTitle}</p>
-            <p className='mt-2'>
-              {t.admin.crawlContinuationStatus}：<span className={continuationStatusClass}>{continuationStatusLabel}</span>
-            </p>
-            <p>{t.admin.crawlContinuationScheduledAt}：{continuation?.lastScheduledAt ? new Date(continuation.lastScheduledAt).toLocaleString() : '-'}</p>
-            <p>{t.admin.crawlContinuationAttemptAt}：{continuation?.lastAttemptAt ? new Date(continuation.lastAttemptAt).toLocaleString() : '-'}</p>
-            <p>{t.admin.crawlContinuationAcceptedAt}：{continuation?.lastAcceptedAt ? new Date(continuation.lastAcceptedAt).toLocaleString() : '-'}</p>
-            <p className='break-all'>{t.admin.crawlContinuationDetail}：{continuation?.lastDetail || '-'}</p>
-            {continuationStalled && (
-              <p className='mt-2 text-red-500'>{t.admin.crawlContinuationAlertStalled}</p>
-            )}
-          </div>
+          {loopNotice && (
+            <p className='text-xs text-red-500'>{loopNotice}</p>
+          )}
         </div>
 
         <div className='mt-4 flex items-center gap-3'>
@@ -312,7 +403,7 @@ export function AdminCrawlPage({ config }: Props) {
           <button
             type='button'
             onClick={handleRunNow}
-            disabled={running}
+            disabled={running || continuousRunning}
             className='rounded-xl bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-brand-strong)] disabled:opacity-50'>
             {running ? t.admin.crawlRunning : t.admin.crawlRunNow}
           </button>
@@ -467,6 +558,10 @@ export function AdminCrawlPage({ config }: Props) {
       </div>
     </div>
   )
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 function SourcesTable({
