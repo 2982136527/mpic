@@ -8,7 +8,7 @@
 |------|------|
 | Vercel | 托管网站前台、后台管理页、登录、上传、公开 API |
 | GitHub 图片仓库 | 存储图片文件和 JSON 索引 |
-| GitHub Actions | 每 5 分钟触发一次自动采集，每次在约 4 分 30 秒窗口内连续跑多批 |
+| GitHub Actions | 自动采集接力主链；每轮结束前主动派发下一轮，5 分钟定时仅作兜底 |
 | GitHub OAuth | 管理员/用户登录 |
 
 自动采集现在不是靠打开后台页面续跑，也不是靠 Vercel Cron。
@@ -62,7 +62,7 @@
 - 内置多个随机图片 API 源
 - 支持 `redirect` / `json` / `direct` / `pixiv`
 - 管理员可自定义添加 / 编辑 / 删除采集源
-- GitHub Actions 每 5 分钟触发一次，每次尽量连续跑多批
+- GitHub Actions 每轮结束前主动接力下一轮，5 分钟错峰定时仅作兜底
 - 后台监控最近一次自动采集状态
 
 ### 公开 API
@@ -76,7 +76,7 @@
 完整部署分成两部分：
 
 1. Vercel：部署站点和后台
-2. GitHub：配置 Actions 和 Secrets，让自动采集每 5 分钟跑一次
+2. GitHub：配置 Actions 和 Secrets，让自动采集持续接力运行
 
 如果你只部署了 Vercel，没有配置 GitHub Actions，网站能用，但自动采集不会自己持续跑。
 
@@ -183,7 +183,7 @@
 
 - `已开启`：表示允许 GitHub Actions 跑
 - `采集中...`：表示当前真的有一轮任务在执行
-- `下次触发`：下一次 5 分钟调度时间
+- `下次兜底触发`：下一次 GitHub 5 分钟兜底调度时间
 - `立即采集`：手动立刻跑一轮
 
 ### 8. 配置自定义域名（可选）
@@ -195,14 +195,16 @@
 
 ## 自动采集的工作方式
 
-自动采集不是常驻进程，而是 GitHub Actions 每 5 分钟触发一次；每次触发后会在约 4 分 30 秒窗口内尽量连续跑多批：
+自动采集现在由 GitHub Actions 接力运行：每一轮会在结束前主动派发下一轮；5 分钟 GitHub 定时只是兜底，不再是唯一驱动：
 
-1. GitHub Actions 触发 `.github/workflows/crawl.yml`
+1. GitHub Actions 通过 `schedule` 或 `workflow_dispatch` 触发 `.github/workflows/crawl.yml`
 2. 执行 `pnpm crawl:once`
 3. 脚本读取 GitHub 图片仓库里的 `data/crawl-config.json`
 4. 如果后台开关是关闭的，这轮会直接跳过
 5. 如果后台开关是开启的，这轮会执行一次采集批次
 6. 采集日志和监控状态会写回图片仓库
+7. 当前轮结束前再次检查配置；若仍启用，则主动派发下一轮 GitHub Actions
+8. 如果主动接力链路偶发失败，GitHub 每 5 分钟的错峰定时会把链重新拉起
 
 相关入口：
 
