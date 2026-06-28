@@ -83,6 +83,7 @@ export default async function HomePage({ searchParams }: PageProps) {
           <EmptyState />
         ) : (
           <GalleryContent
+            key={[search, yearMonth, camera, lens].join('|')}
             initialImages={images}
             initialHasMore={hasMore}
             search={search}

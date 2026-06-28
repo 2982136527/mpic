@@ -20,7 +20,7 @@ export function GalleryContent({ initialImages, initialHasMore, search, yearMont
   const [images, setImages] = useState(initialImages)
   const [hasMore, setHasMore] = useState(initialHasMore)
   const [loading, setLoading] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [cursor, setCursor] = useState(() => getCursor(initialImages))
   const { t } = useLang()
 
   const observerRef = useRef<IntersectionObserver | null>(null)
@@ -30,19 +30,22 @@ export function GalleryContent({ initialImages, initialHasMore, search, yearMont
     setLoading(true)
 
     try {
-      const nextPage = currentPage + 1
-      const params = new URLSearchParams({ page: String(nextPage) })
+      const params = new URLSearchParams()
       if (search) params.set('search', search)
       if (yearMonth) params.set('yearMonth', yearMonth)
       if (camera) params.set('camera', camera)
       if (lens) params.set('lens', lens)
+      if (cursor) {
+        params.set('before', cursor.sortValue)
+        params.set('beforeId', cursor.id)
+      }
 
       const res = await fetch(`/api/images?${params}`)
       const data = await res.json()
 
       if (data.images?.length > 0) {
-        setImages(prev => [...prev, ...data.images])
-        setCurrentPage(nextPage)
+        setImages(prev => appendUniqueImages(prev, data.images))
+        setCursor(getCursor(data.images))
         setHasMore(data.hasMore)
       } else {
         setHasMore(false)
@@ -52,7 +55,7 @@ export function GalleryContent({ initialImages, initialHasMore, search, yearMont
     } finally {
       setLoading(false)
     }
-  }, [loading, hasMore, currentPage, search, yearMonth, camera, lens])
+  }, [loading, hasMore, cursor, search, yearMonth, camera, lens])
 
   const sentinelCallback = useCallback(
     (node: HTMLDivElement | null) => {
@@ -92,4 +95,29 @@ export function GalleryContent({ initialImages, initialHasMore, search, yearMont
       )}
     </>
   )
+}
+
+function getCursor(images: ImageWithLinks[]) {
+  const lastImage = images.at(-1)
+  if (!lastImage) return null
+
+  return {
+    id: lastImage.id,
+    sortValue: lastImage.exif?.shootDate || lastImage.createdAt,
+  }
+}
+
+function appendUniqueImages(current: ImageWithLinks[], incoming: ImageWithLinks[]) {
+  if (incoming.length === 0) return current
+
+  const seen = new Set(current.map(image => image.id))
+  const next = [...current]
+
+  for (const image of incoming) {
+    if (seen.has(image.id)) continue
+    seen.add(image.id)
+    next.push(image)
+  }
+
+  return next
 }

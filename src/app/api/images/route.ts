@@ -14,8 +14,10 @@ export async function GET(request: NextRequest) {
     const yearMonth = request.nextUrl.searchParams.get('yearMonth') || undefined
     const camera = request.nextUrl.searchParams.get('camera') || undefined
     const lens = request.nextUrl.searchParams.get('lens') || undefined
+    const before = request.nextUrl.searchParams.get('before') || undefined
+    const beforeId = request.nextUrl.searchParams.get('beforeId') || undefined
 
-    const result = await listImages({ page, pageSize, search, publicOnly, yearMonth, camera, lens })
+    const result = await listImages({ page, pageSize, search, publicOnly, yearMonth, camera, lens, before, beforeId })
 
     const images = result.images.map(img => ({
       ...img,

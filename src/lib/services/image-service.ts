@@ -88,8 +88,10 @@ export async function listImages(params: {
   yearMonth?: string
   camera?: string
   lens?: string
+  before?: string
+  beforeId?: string
 }): Promise<{ images: ImageRecord[]; total: number; hasMore: boolean }> {
-  const { page = 1, pageSize = 30, search, uploaderLogin, publicOnly, albumId, yearMonth, camera, lens } = params
+  const { page = 1, pageSize = 30, search, uploaderLogin, publicOnly, albumId, yearMonth, camera, lens, before, beforeId } = params
   const file = await getJsonFile<ImagesIndex>(IMAGES_PATH)
   if (!file) return { images: [], total: 0, hasMore: false }
 
@@ -131,17 +133,33 @@ export async function listImages(params: {
     images = images.filter(img => img.exif?.lens === lens)
   }
 
+  if (before) {
+    images = images.filter(img => {
+      const sortValue = getImageSortValue(img)
+      if (sortValue < before) return true
+      if (sortValue > before) return false
+      if (!beforeId) return false
+      return img.id < beforeId
+    })
+  }
+
   images.sort((a, b) => {
-    const dateA = a.exif?.shootDate || a.createdAt
-    const dateB = b.exif?.shootDate || b.createdAt
-    return dateB.localeCompare(dateA)
+    const dateA = getImageSortValue(a)
+    const dateB = getImageSortValue(b)
+    const byDate = dateB.localeCompare(dateA)
+    if (byDate !== 0) return byDate
+    return b.id.localeCompare(a.id)
   })
 
   const total = images.length
-  const start = (page - 1) * pageSize
+  const start = before ? 0 : (page - 1) * pageSize
   const sliced = images.slice(start, start + pageSize)
 
   return { images: sliced, total, hasMore: start + pageSize < total }
+}
+
+function getImageSortValue(img: ImageRecord): string {
+  return img.exif?.shootDate || img.createdAt
 }
 
 export async function getImage(id: string): Promise<ImageRecord | null> {
@@ -211,22 +229,13 @@ export async function uploadImage(params: {
 
   let width: number | undefined
   let height: number | undefined
-  if (typeof Image !== 'undefined') {
-    try {
-      const blob = new Blob([new Uint8Array(buffer)], { type: mimeType })
-      const url = URL.createObjectURL(blob)
-      const img = new Image()
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve()
-        img.onerror = () => reject(new Error('Failed to load image'))
-        img.src = url
-      })
-      width = img.width
-      height = img.height
-      URL.revokeObjectURL(url)
-    } catch {
-      // Skip dimensions if not available
-    }
+  try {
+    const sharp = (await import('sharp')).default
+    const metadata = await sharp(buffer, { animated: true }).metadata()
+    width = metadata.width
+    height = metadata.height
+  } catch {
+    // Skip dimensions if metadata is not available
   }
 
   // Extract EXIF data
