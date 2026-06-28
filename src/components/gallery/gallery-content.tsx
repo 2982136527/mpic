@@ -17,9 +17,16 @@ type Props = {
   lens?: string
 }
 
-const INITIAL_PRELOAD_OFFSET = 8
-const PRELOAD_BATCH_SIZE = 12
-const LOAD_MORE_ROOT_MARGIN = '1200px'
+const INITIAL_PRELOAD_OFFSET = 12
+const PRELOAD_BATCH_SIZE = 4
+const INITIAL_PRELOAD_DELAY_MS = 1500
+const INCREMENTAL_PRELOAD_DELAY_MS = 750
+const LOAD_MORE_ROOT_MARGIN = '800px'
+
+type NetworkInfo = {
+  effectiveType?: string
+  saveData?: boolean
+}
 
 export function GalleryContent({ initialImages, initialHasMore, search, yearMonth, camera, lens }: Props) {
   const [images, setImages] = useState(initialImages)
@@ -30,11 +37,15 @@ export function GalleryContent({ initialImages, initialHasMore, search, yearMont
 
   const observerRef = useRef<IntersectionObserver | null>(null)
   const preloadedUrlsRef = useRef(new Set<string>())
+  const preloadTimeoutsRef = useRef<number[]>([])
 
-  const preloadImages = useCallback((items: ImageWithLinks[]) => {
+  const preloadImages = useCallback((items: ImageWithLinks[], delayMs: number) => {
     if (typeof window === 'undefined' || items.length === 0) return
+    if (shouldSkipPreload()) return
 
-    window.setTimeout(() => {
+    const timeoutId = window.setTimeout(() => {
+      if (shouldSkipPreload()) return
+
       for (const image of items) {
         const url = getPreferredPublicImageSource(image.links)
         if (!url || preloadedUrlsRef.current.has(url)) continue
@@ -44,12 +55,26 @@ export function GalleryContent({ initialImages, initialHasMore, search, yearMont
         preload.decoding = 'async'
         preload.src = url
       }
-    }, 0)
+    }, delayMs)
+
+    preloadTimeoutsRef.current.push(timeoutId)
   }, [])
 
   useEffect(() => {
-    preloadImages(initialImages.slice(INITIAL_PRELOAD_OFFSET, INITIAL_PRELOAD_OFFSET + PRELOAD_BATCH_SIZE))
+    preloadImages(
+      initialImages.slice(INITIAL_PRELOAD_OFFSET, INITIAL_PRELOAD_OFFSET + PRELOAD_BATCH_SIZE),
+      INITIAL_PRELOAD_DELAY_MS,
+    )
   }, [initialImages, preloadImages])
+
+  useEffect(() => {
+    return () => {
+      for (const timeoutId of preloadTimeoutsRef.current) {
+        window.clearTimeout(timeoutId)
+      }
+      preloadTimeoutsRef.current = []
+    }
+  }, [])
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return
@@ -73,7 +98,7 @@ export function GalleryContent({ initialImages, initialHasMore, search, yearMont
         setImages(prev => appendUniqueImages(prev, data.images))
         setCursor(getCursor(data.images))
         setHasMore(data.hasMore)
-        preloadImages(data.images.slice(0, PRELOAD_BATCH_SIZE))
+        preloadImages(data.images.slice(0, PRELOAD_BATCH_SIZE), INCREMENTAL_PRELOAD_DELAY_MS)
       } else {
         setHasMore(false)
       }
@@ -132,6 +157,16 @@ function getCursor(images: ImageWithLinks[]) {
     id: lastImage.id,
     sortValue: lastImage.exif?.shootDate || lastImage.createdAt,
   }
+}
+
+function shouldSkipPreload() {
+  if (typeof navigator === 'undefined') return true
+
+  const connection = (navigator as Navigator & { connection?: NetworkInfo }).connection
+  if (!connection) return false
+  if (connection.saveData) return true
+
+  return ['slow-2g', '2g', '3g'].includes(connection.effectiveType || '')
 }
 
 function appendUniqueImages(current: ImageWithLinks[], incoming: ImageWithLinks[]) {

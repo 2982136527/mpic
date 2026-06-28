@@ -48,7 +48,7 @@ export function ImageCard({ image, onClick, priority = false }: Props) {
         alt={image.filename}
         loading={priority ? 'eager' : 'lazy'}
         decoding='async'
-        fetchPriority={priority ? 'high' : 'low'}
+        fetchPriority={priority ? 'high' : 'auto'}
         width={width}
         height={height}
         onLoad={() => setLoaded(true)}

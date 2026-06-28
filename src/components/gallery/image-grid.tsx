@@ -20,7 +20,7 @@ const breakpointColumns = {
   640: 2,
 }
 
-const PRIORITY_IMAGE_COUNT = 8
+const PRIORITY_IMAGE_COUNT = 6
 
 export function ImageGrid({ images }: Props) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
