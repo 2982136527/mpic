@@ -6,9 +6,10 @@ import type { ImageRecord, ImageLinks } from '@/types/image'
 type Props = {
   image: ImageRecord & { links: ImageLinks }
   onClick: () => void
+  priority?: boolean
 }
 
-export function ImageCard({ image, onClick }: Props) {
+export function ImageCard({ image, onClick, priority = false }: Props) {
   const [loaded, setLoaded] = useState(false)
   const width = image.width || 4
   const height = image.height || 5
@@ -26,8 +27,9 @@ export function ImageCard({ image, onClick }: Props) {
       <img
         src={image.links.cdn}
         alt={image.filename}
-        loading='lazy'
+        loading={priority ? 'eager' : 'lazy'}
         decoding='async'
+        fetchPriority={priority ? 'high' : 'low'}
         width={width}
         height={height}
         onLoad={() => setLoaded(true)}

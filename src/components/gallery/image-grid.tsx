@@ -20,6 +20,8 @@ const breakpointColumns = {
   640: 2,
 }
 
+const PRIORITY_IMAGE_COUNT = 8
+
 export function ImageGrid({ images }: Props) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const { t } = useLang()
@@ -39,7 +41,12 @@ export function ImageGrid({ images }: Props) {
         className='my-masonry-grid'
         columnClassName='my-masonry-grid_column'>
         {images.map((image, i) => (
-          <ImageCard key={image.id} image={image} onClick={() => setSelectedIndex(i)} />
+          <ImageCard
+            key={image.id}
+            image={image}
+            priority={i < PRIORITY_IMAGE_COUNT}
+            onClick={() => setSelectedIndex(i)}
+          />
         ))}
       </Masonry>
 

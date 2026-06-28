@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { ImageRecord, ImageLinks } from '@/types/image'
 import { ImageGrid } from '@/components/gallery/image-grid'
 import { useLang } from '@/lib/i18n/context'
@@ -16,6 +16,10 @@ type Props = {
   lens?: string
 }
 
+const INITIAL_PRELOAD_OFFSET = 8
+const PRELOAD_BATCH_SIZE = 12
+const LOAD_MORE_ROOT_MARGIN = '1200px'
+
 export function GalleryContent({ initialImages, initialHasMore, search, yearMonth, camera, lens }: Props) {
   const [images, setImages] = useState(initialImages)
   const [hasMore, setHasMore] = useState(initialHasMore)
@@ -24,6 +28,27 @@ export function GalleryContent({ initialImages, initialHasMore, search, yearMont
   const { t } = useLang()
 
   const observerRef = useRef<IntersectionObserver | null>(null)
+  const preloadedUrlsRef = useRef(new Set<string>())
+
+  const preloadImages = useCallback((items: ImageWithLinks[]) => {
+    if (typeof window === 'undefined' || items.length === 0) return
+
+    window.setTimeout(() => {
+      for (const image of items) {
+        const url = image.links.cdn
+        if (!url || preloadedUrlsRef.current.has(url)) continue
+
+        preloadedUrlsRef.current.add(url)
+        const preload = new window.Image()
+        preload.decoding = 'async'
+        preload.src = url
+      }
+    }, 0)
+  }, [])
+
+  useEffect(() => {
+    preloadImages(initialImages.slice(INITIAL_PRELOAD_OFFSET, INITIAL_PRELOAD_OFFSET + PRELOAD_BATCH_SIZE))
+  }, [initialImages, preloadImages])
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return
@@ -47,6 +72,7 @@ export function GalleryContent({ initialImages, initialHasMore, search, yearMont
         setImages(prev => appendUniqueImages(prev, data.images))
         setCursor(getCursor(data.images))
         setHasMore(data.hasMore)
+        preloadImages(data.images.slice(0, PRELOAD_BATCH_SIZE))
       } else {
         setHasMore(false)
       }
@@ -55,7 +81,7 @@ export function GalleryContent({ initialImages, initialHasMore, search, yearMont
     } finally {
       setLoading(false)
     }
-  }, [loading, hasMore, cursor, search, yearMonth, camera, lens])
+  }, [loading, hasMore, cursor, search, yearMonth, camera, lens, preloadImages])
 
   const sentinelCallback = useCallback(
     (node: HTMLDivElement | null) => {
@@ -71,7 +97,7 @@ export function GalleryContent({ initialImages, initialHasMore, search, yearMont
             loadMore()
           }
         },
-        { rootMargin: '500px' },
+        { rootMargin: LOAD_MORE_ROOT_MARGIN },
       )
 
       observerRef.current.observe(node)
