@@ -14,10 +14,9 @@ export async function POST(request: NextRequest) {
     await requireAdminSession()
     const result = await runCrawl(true)
 
-    // Self-trigger next run if there's more to crawl
+    // Continue in-process within the current function budget.
     if (result.shouldContinue) {
-      const cronSecret = process.env.CRON_SECRET
-      scheduleNextCrawl(request.url, cronSecret, '[api][admin][crawl][run][continue]')
+      scheduleNextCrawl({ force: true, logPrefix: '[api][admin][crawl][run][continue]' })
     }
 
     return ok(requestId, { result: { fetched: result.fetched, duplicates: result.duplicates, errors: result.errors } })

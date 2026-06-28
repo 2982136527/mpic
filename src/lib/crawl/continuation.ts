@@ -1,128 +1,84 @@
 import { after } from 'next/server'
-import { updateCrawlContinuation } from '@/lib/services/crawl-service'
+import { updateCrawlContinuation, runCrawl } from '@/lib/services/crawl-service'
 
-const CONTINUE_RETRY_DELAYS_MS = [2000, 8000, 20000, 45000]
+const CONTINUATION_WINDOW_MS = 180_000
+const MIN_TIME_FOR_NEXT_BATCH_MS = 70_000
 
-type TriggerResult = {
-  accepted: boolean
-  retryable: boolean
-  detail: string
+type ScheduleNextCrawlOptions = {
+  force?: boolean
+  logPrefix: string
 }
 
-function getContinuationUrls(requestUrl: string): string[] {
-  const urls = new Set<string>()
-  urls.add(new URL('/api/cron/crawl', requestUrl).toString())
-
-  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, '')
-  if (configuredSiteUrl) {
-    urls.add(new URL('/api/cron/crawl', configuredSiteUrl).toString())
-  }
-
-  return Array.from(urls)
-}
-
-async function tryTrigger(url: string, cronSecret?: string): Promise<TriggerResult> {
-  const response = await fetch(url, {
-    headers: cronSecret ? { Authorization: `Bearer ${cronSecret}` } : {},
-    cache: 'no-store',
-  })
-
-  const text = await response.text()
-  const snippet = text.slice(0, 200)
-
-  if (!response.ok) {
-    return {
-      accepted: false,
-      retryable: true,
-      detail: `HTTP ${response.status} ${response.statusText}${snippet ? ` body=${snippet}` : ''}`,
-    }
-  }
-
-  let payload: { ok?: boolean; fetched?: number; duplicates?: number; errors?: number } | undefined
-  try {
-    payload = text ? (JSON.parse(text) as { ok?: boolean; fetched?: number; duplicates?: number; errors?: number }) : undefined
-  } catch {
-    payload = undefined
-  }
-
-  if (payload?.ok === true) {
-    const fetched = payload.fetched ?? 0
-    const duplicates = payload.duplicates ?? 0
-    const errors = payload.errors ?? 0
-
-    if (fetched === 0 && duplicates === 0 && errors === 0) {
-      return {
-        accepted: false,
-        retryable: true,
-        detail: 'Accepted by route but skipped with fetched=0 duplicates=0 errors=0',
-      }
-    }
-
-    return {
-      accepted: true,
-      retryable: false,
-      detail: `accepted fetched=${fetched} duplicates=${duplicates} errors=${errors}`,
-    }
-  }
-
-  return {
-    accepted: false,
-    retryable: true,
-    detail: `Unexpected 200 response${snippet ? ` body=${snippet}` : ''}`,
-  }
-}
-
-export function scheduleNextCrawl(requestUrl: string, cronSecret: string | undefined, logPrefix: string) {
-  const urls = getContinuationUrls(requestUrl)
-
+export function scheduleNextCrawl({ force = false, logPrefix }: ScheduleNextCrawlOptions) {
   after(async () => {
-    let lastDetail = 'no attempts made'
-    let lastUrl = urls[0] || ''
     const scheduledAt = new Date().toISOString()
+    const deadline = Date.now() + CONTINUATION_WINDOW_MS
+    let continuationRuns = 0
+    let lastDetail = `Queued in-process continuation window=${Math.round(CONTINUATION_WINDOW_MS / 1000)}s`
 
     await updateCrawlContinuation({
       lastScheduledAt: scheduledAt,
       lastStatus: 'scheduled',
-      lastDetail: `Queued continuation across ${urls.length} target(s)`,
+      lastDetail,
+      lastUrl: 'in-process',
     }).catch(() => {})
 
-    for (const url of urls) {
-      for (const delay of CONTINUE_RETRY_DELAYS_MS) {
-        try {
-          await new Promise(resolve => setTimeout(resolve, delay))
-          const result = await tryTrigger(url, cronSecret)
-          lastUrl = url
-          lastDetail = `${url} -> ${result.detail}`
+    while (Date.now() < deadline - MIN_TIME_FOR_NEXT_BATCH_MS) {
+      const attemptAt = new Date().toISOString()
 
-          if (result.accepted) {
-            const acceptedAt = new Date().toISOString()
-            await updateCrawlContinuation({
-              lastAttemptAt: acceptedAt,
-              lastAcceptedAt: acceptedAt,
-              lastStatus: 'accepted',
-              lastDetail,
-              lastUrl: url,
-            }).catch(() => {})
-            return
-          }
+      await updateCrawlContinuation({
+        lastAttemptAt: attemptAt,
+        lastStatus: 'scheduled',
+        lastDetail: `Starting in-process continuation batch ${continuationRuns + 1}`,
+        lastUrl: 'in-process',
+      }).catch(() => {})
 
-          if (!result.retryable) {
-            break
-          }
-        } catch (error) {
-          lastUrl = url
-          lastDetail = `${url} -> ${error instanceof Error ? error.message : String(error)}`
+      try {
+        const result = await runCrawl(force)
+
+        continuationRuns += 1
+        lastDetail = `in-process batch ${continuationRuns} fetched=${result.fetched} duplicates=${result.duplicates} errors=${result.errors}`
+
+        await updateCrawlContinuation({
+          lastAttemptAt: attemptAt,
+          lastAcceptedAt: new Date().toISOString(),
+          lastStatus: 'accepted',
+          lastDetail,
+          lastUrl: 'in-process',
+        }).catch(() => {})
+
+        if (!result.shouldContinue) {
+          lastDetail = `${lastDetail} stop=disabled_or_idle`
+          await updateCrawlContinuation({
+            lastStatus: 'accepted',
+            lastDetail,
+            lastUrl: 'in-process',
+          }).catch(() => {})
+          return
         }
+      } catch (error) {
+        lastDetail = error instanceof Error ? error.message : String(error)
+        await updateCrawlContinuation({
+          lastAttemptAt: attemptAt,
+          lastStatus: 'failed',
+          lastDetail: `in-process continuation failed: ${lastDetail}`,
+          lastUrl: 'in-process',
+        }).catch(() => {})
+
+        console.error(logPrefix, lastDetail)
+        return
       }
     }
 
-    await updateCrawlContinuation({
-      lastAttemptAt: new Date().toISOString(),
-      lastStatus: 'failed',
-      lastDetail,
-      lastUrl,
-    }).catch(() => {})
+    lastDetail = continuationRuns > 0
+      ? `in-process continuation finished batches=${continuationRuns} reason=time_budget_reached`
+      : 'in-process continuation skipped reason=insufficient_time_budget'
 
-    console.error(logPrefix, { urls, lastDetail })
+    await updateCrawlContinuation({
+      lastStatus: 'accepted',
+      lastDetail,
+      lastUrl: 'in-process',
+      ...(continuationRuns > 0 ? { lastAcceptedAt: new Date().toISOString() } : {}),
+    }).catch(() => {})
   })
 }

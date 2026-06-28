@@ -16,9 +16,9 @@ export async function GET(request: Request) {
   try {
     const result = await runCrawl()
 
-    // Self-trigger next run if there's more to crawl
+    // Continue in-process within the current function budget.
     if (result.shouldContinue) {
-      scheduleNextCrawl(request.url, cronSecret, '[api][cron][crawl][continue]')
+      scheduleNextCrawl({ logPrefix: '[api][cron][crawl][continue]' })
     }
 
     return NextResponse.json({ ok: true, fetched: result.fetched, duplicates: result.duplicates, errors: result.errors })
