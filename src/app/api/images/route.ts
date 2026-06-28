@@ -1,7 +1,9 @@
-import { NextRequest } from 'next/server'
+import { after, NextRequest } from 'next/server'
 import { listImages, buildImageLinks } from '@/lib/services/image-service'
 import { createRequestId, ok, fail } from '@/lib/api/response'
 import { HttpError } from '@/lib/api/errors'
+import { appendAccessLog } from '@/lib/services/access-log-service'
+import { createAccessLogEntry } from '@/lib/access-tracking'
 
 export async function GET(request: NextRequest) {
   const requestId = createRequestId()
@@ -24,12 +26,33 @@ export async function GET(request: NextRequest) {
       links: buildImageLinks(img),
     }))
 
-    return ok(requestId, { images, total: result.total, hasMore: result.hasMore, page, pageSize })
+    const response = ok(requestId, { images, total: result.total, hasMore: result.hasMore, page, pageSize })
+    logImagesAccess(request, 200, `returned=${images.length} publicOnly=${publicOnly}`)
+    return response
   } catch (error) {
     if (error instanceof HttpError) {
-      return fail(requestId, error.status, error.code, error.message)
+      const response = fail(requestId, error.status, error.code, error.message)
+      logImagesAccess(request, error.status, error.code)
+      return response
     }
     console.error('[api][images][GET]', requestId, error)
-    return fail(requestId, 500, 'INTERNAL_ERROR', 'Failed to load images')
+    const response = fail(requestId, 500, 'INTERNAL_ERROR', 'Failed to load images')
+    logImagesAccess(request, 500, 'INTERNAL_ERROR')
+    return response
   }
+}
+
+function logImagesAccess(request: NextRequest, status: number, detail: string) {
+  after(async () => {
+    try {
+      const entry = await createAccessLogEntry(request, {
+        type: 'images_api',
+        status,
+        detail,
+      })
+      await appendAccessLog(entry)
+    } catch (error) {
+      console.error('[api][images][access]', error)
+    }
+  })
 }

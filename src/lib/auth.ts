@@ -22,6 +22,9 @@ export const authOptions: NextAuthOptions = {
       if (profile && 'login' in profile && typeof profile.login === 'string') {
         token.login = profile.login
       }
+      if (profile && 'id' in profile && (typeof profile.id === 'string' || typeof profile.id === 'number')) {
+        token.githubId = String(profile.id)
+      }
       if (account && typeof account.access_token === 'string') {
         token.githubAccessToken = account.access_token
       }
@@ -30,7 +33,9 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         const login = typeof token.login === 'string' ? token.login : undefined
+        const githubId = typeof token.githubId === 'string' ? token.githubId : undefined
         session.user.login = login
+        session.user.githubId = githubId
         session.user.role = isAdminLogin(login) ? 'admin' : 'user'
       }
       return session
