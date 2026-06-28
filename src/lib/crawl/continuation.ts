@@ -1,4 +1,5 @@
 import { after } from 'next/server'
+import { updateCrawlContinuation } from '@/lib/services/crawl-service'
 
 const CONTINUE_RETRY_DELAYS_MS = [2000, 8000, 20000, 45000]
 
@@ -76,15 +77,32 @@ export function scheduleNextCrawl(requestUrl: string, cronSecret: string | undef
 
   after(async () => {
     let lastDetail = 'no attempts made'
+    let lastUrl = urls[0] || ''
+    const scheduledAt = new Date().toISOString()
+
+    await updateCrawlContinuation({
+      lastScheduledAt: scheduledAt,
+      lastStatus: 'scheduled',
+      lastDetail: `Queued continuation across ${urls.length} target(s)`,
+    }).catch(() => {})
 
     for (const url of urls) {
       for (const delay of CONTINUE_RETRY_DELAYS_MS) {
         try {
           await new Promise(resolve => setTimeout(resolve, delay))
           const result = await tryTrigger(url, cronSecret)
+          lastUrl = url
           lastDetail = `${url} -> ${result.detail}`
 
           if (result.accepted) {
+            const acceptedAt = new Date().toISOString()
+            await updateCrawlContinuation({
+              lastAttemptAt: acceptedAt,
+              lastAcceptedAt: acceptedAt,
+              lastStatus: 'accepted',
+              lastDetail,
+              lastUrl: url,
+            }).catch(() => {})
             return
           }
 
@@ -92,10 +110,18 @@ export function scheduleNextCrawl(requestUrl: string, cronSecret: string | undef
             break
           }
         } catch (error) {
+          lastUrl = url
           lastDetail = `${url} -> ${error instanceof Error ? error.message : String(error)}`
         }
       }
     }
+
+    await updateCrawlContinuation({
+      lastAttemptAt: new Date().toISOString(),
+      lastStatus: 'failed',
+      lastDetail,
+      lastUrl,
+    }).catch(() => {})
 
     console.error(logPrefix, { urls, lastDetail })
   })

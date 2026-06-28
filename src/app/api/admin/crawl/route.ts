@@ -27,13 +27,21 @@ export async function PUT(request: NextRequest) {
   try {
     const { login } = await requireAdminSession()
     const body = await request.json()
+    const changes: Record<string, unknown> = {}
 
-    const config = await updateCrawlConfig(body)
+    if (typeof body.enabled === 'boolean') {
+      changes.enabled = body.enabled
+    }
+    if (Array.isArray(body.sources)) {
+      changes.sources = body.sources
+    }
+
+    const config = await updateCrawlConfig(changes)
 
     await appendLog({
       action: 'update_crawl_config',
       actorLogin: login,
-      detail: JSON.stringify(body),
+      detail: JSON.stringify(changes),
     })
 
     return ok(requestId, { config })

@@ -227,6 +227,18 @@ const en = {
     crawlStatusEnabled: 'Enabled',
     crawlStatusDisabled: 'Disabled',
     crawlStatusNextRun: 'Next trigger',
+    crawlRunningSince: 'Current Run Started',
+    crawlContinuationTitle: 'Continuation Monitor',
+    crawlContinuationStatus: 'Continuation Status',
+    crawlContinuationScheduledAt: 'Last Scheduled',
+    crawlContinuationAttemptAt: 'Last Attempt',
+    crawlContinuationAcceptedAt: 'Last Accepted',
+    crawlContinuationDetail: 'Continuation Detail',
+    crawlContinuationStatusScheduled: 'Queued',
+    crawlContinuationStatusAccepted: 'Accepted',
+    crawlContinuationStatusFailed: 'Failed',
+    crawlContinuationStatusUnknown: 'Unknown',
+    crawlContinuationAlertStalled: 'Continuation recently failed and crawl is not running',
   },
 }
 

@@ -27,6 +27,7 @@ const EMPTY_SOURCE_FORM: SourceFormState = {
 export function AdminCrawlPage({ config }: Props) {
   const { t } = useLang()
   const [form, setForm] = useState(config)
+  const [status, setStatus] = useState(config)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [running, setRunning] = useState(false)
@@ -44,6 +45,7 @@ export function AdminCrawlPage({ config }: Props) {
       const res = await fetch('/api/admin/crawl')
       if (!res.ok) return
       const data = await res.json()
+      setStatus(data.config)
       setCrawlRunning(data.config.running || false)
     } catch {
       // ignore
@@ -62,6 +64,7 @@ export function AdminCrawlPage({ config }: Props) {
   }, [])
 
   useEffect(() => {
+    fetchStatus()
     fetchLogs()
     // Poll status every 5s when running
     if (crawlRunning) {
@@ -92,6 +95,10 @@ export function AdminCrawlPage({ config }: Props) {
         body: JSON.stringify(form),
       })
       if (!res.ok) throw new Error('Save failed')
+      const data = await res.json()
+      setForm(data.config)
+      setStatus(data.config)
+      setCrawlRunning(data.config.running || false)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch {
@@ -223,16 +230,31 @@ export function AdminCrawlPage({ config }: Props) {
 
   const animeSources = form.sources.filter(s => s.category === 'anime')
   const realSources = form.sources.filter(s => s.category === 'real')
+  const continuation = status.continuation
+  const continuationStatus = continuation?.lastStatus || 'unknown'
+  const continuationStatusLabel = continuationStatus === 'scheduled'
+    ? t.admin.crawlContinuationStatusScheduled
+    : continuationStatus === 'accepted'
+      ? t.admin.crawlContinuationStatusAccepted
+      : continuationStatus === 'failed'
+        ? t.admin.crawlContinuationStatusFailed
+        : t.admin.crawlContinuationStatusUnknown
+  const continuationStatusClass = continuationStatus === 'accepted'
+    ? 'text-green-600'
+    : continuationStatus === 'failed'
+      ? 'text-red-500'
+      : 'text-[var(--color-ink-soft)]'
+  const continuationStalled = status.enabled && !crawlRunning && continuation?.lastStatus === 'failed'
 
   return (
     <div className='space-y-6'>
       {/* Status Bar */}
       <div className='flex items-center gap-3 rounded-2xl border border-white/70 bg-white/60 px-5 py-3 backdrop-blur'>
-        <span className={`inline-block h-2.5 w-2.5 rounded-full ${crawlRunning ? 'animate-pulse bg-green-500' : form.enabled ? 'bg-yellow-500' : 'bg-gray-400'}`} />
+        <span className={`inline-block h-2.5 w-2.5 rounded-full ${crawlRunning ? 'animate-pulse bg-green-500' : status.enabled ? 'bg-yellow-500' : 'bg-gray-400'}`} />
         <span className='text-sm text-[var(--color-ink)]'>
           {crawlRunning
             ? t.admin.crawlStatusRunning
-            : form.enabled
+            : status.enabled
               ? t.admin.crawlStatusEnabled
               : t.admin.crawlStatusDisabled}
         </span>
@@ -252,8 +274,24 @@ export function AdminCrawlPage({ config }: Props) {
           </label>
 
           <p className='text-xs text-[var(--color-ink-soft)]'>
-            {t.admin.crawlLastRun}：{form.lastRunAt ? new Date(form.lastRunAt).toLocaleString() : t.admin.crawlNeverRun}
+            {t.admin.crawlLastRun}：{status.lastRunAt ? new Date(status.lastRunAt).toLocaleString() : t.admin.crawlNeverRun}
           </p>
+          <p className='text-xs text-[var(--color-ink-soft)]'>
+            {t.admin.crawlRunningSince}：{status.runningSince ? new Date(status.runningSince).toLocaleString() : '-'}
+          </p>
+          <div className='rounded-xl border border-[var(--color-border)] bg-white/70 px-3 py-3 text-xs text-[var(--color-ink-soft)]'>
+            <p className='font-medium text-[var(--color-ink)]'>{t.admin.crawlContinuationTitle}</p>
+            <p className='mt-2'>
+              {t.admin.crawlContinuationStatus}：<span className={continuationStatusClass}>{continuationStatusLabel}</span>
+            </p>
+            <p>{t.admin.crawlContinuationScheduledAt}：{continuation?.lastScheduledAt ? new Date(continuation.lastScheduledAt).toLocaleString() : '-'}</p>
+            <p>{t.admin.crawlContinuationAttemptAt}：{continuation?.lastAttemptAt ? new Date(continuation.lastAttemptAt).toLocaleString() : '-'}</p>
+            <p>{t.admin.crawlContinuationAcceptedAt}：{continuation?.lastAcceptedAt ? new Date(continuation.lastAcceptedAt).toLocaleString() : '-'}</p>
+            <p className='break-all'>{t.admin.crawlContinuationDetail}：{continuation?.lastDetail || '-'}</p>
+            {continuationStalled && (
+              <p className='mt-2 text-red-500'>{t.admin.crawlContinuationAlertStalled}</p>
+            )}
+          </div>
         </div>
 
         <div className='mt-4 flex items-center gap-3'>

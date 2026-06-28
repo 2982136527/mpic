@@ -8,6 +8,17 @@ export type CrawlSource = {
   jsonPath?: string
 }
 
+export type CrawlContinuationStatus = 'scheduled' | 'accepted' | 'failed'
+
+export type CrawlContinuationMonitor = {
+  lastScheduledAt?: string
+  lastAttemptAt?: string
+  lastAcceptedAt?: string
+  lastStatus?: CrawlContinuationStatus
+  lastDetail?: string
+  lastUrl?: string
+}
+
 export type CrawlConfig = {
   version: 1
   enabled: boolean
@@ -15,6 +26,7 @@ export type CrawlConfig = {
   lastRunAt?: string
   running?: boolean
   runningSince?: string
+  continuation?: CrawlContinuationMonitor
 }
 
 export const DEFAULT_CRAWL_CONFIG: CrawlConfig = {

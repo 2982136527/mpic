@@ -1,5 +1,5 @@
 import { getJsonFile, updateJsonWithRetry } from '@/lib/github/client'
-import { DEFAULT_CRAWL_CONFIG, type CrawlConfig, type CrawlSource, type CrawlLogEntry, type CrawlLogsIndex } from '@/types/crawl'
+import { DEFAULT_CRAWL_CONFIG, type CrawlConfig, type CrawlSource, type CrawlLogEntry, type CrawlLogsIndex, type CrawlContinuationMonitor } from '@/types/crawl'
 import { getDefaultSources } from '@/lib/crawl/sources'
 import { fetchImage } from '@/lib/crawl/fetcher'
 import { uploadImage } from '@/lib/services/image-service'
@@ -11,25 +11,42 @@ const MAX_LOG_ENTRIES = 200
 const CONCURRENCY = 6
 const BATCH_SIZE = 5
 
+function getBaseConfig(current?: CrawlConfig): CrawlConfig {
+  const base = { ...DEFAULT_CRAWL_CONFIG, ...(current || {}) }
+  if (!base.sources || base.sources.length === 0) {
+    base.sources = getDefaultSources()
+  }
+  return base
+}
+
 export async function getCrawlConfig(): Promise<CrawlConfig> {
   const file = await getJsonFile<CrawlConfig>(CRAWL_CONFIG_PATH)
   if (!file) {
     const defaults = { ...DEFAULT_CRAWL_CONFIG, sources: getDefaultSources() }
     return defaults
   }
-  const config = { ...DEFAULT_CRAWL_CONFIG, ...file.data }
-  if (config.sources.length === 0) {
-    config.sources = getDefaultSources()
-  }
-  return config
+  return getBaseConfig(file.data)
 }
 
 export async function updateCrawlConfig(changes: Partial<CrawlConfig>): Promise<CrawlConfig> {
   await updateJsonWithRetry<CrawlConfig>(CRAWL_CONFIG_PATH, current => {
-    const base = current || { ...DEFAULT_CRAWL_CONFIG, sources: getDefaultSources() }
+    const base = getBaseConfig(current)
     return { ...base, ...changes, version: 1 }
   })
   return getCrawlConfig()
+}
+
+export async function updateCrawlContinuation(changes: Partial<CrawlContinuationMonitor>): Promise<void> {
+  await updateJsonWithRetry<CrawlConfig>(CRAWL_CONFIG_PATH, current => {
+    const base = getBaseConfig(current)
+    return {
+      ...base,
+      continuation: {
+        ...base.continuation,
+        ...changes,
+      },
+    }
+  })
 }
 
 export async function getCrawlLogs(): Promise<CrawlLogEntry[]> {
@@ -61,7 +78,7 @@ export async function runCrawl(force = false): Promise<{ fetched: number; duplic
   // Mark as running
   const now = new Date().toISOString()
   await updateJsonWithRetry<CrawlConfig>(CRAWL_CONFIG_PATH, current => {
-    const base = current || { ...DEFAULT_CRAWL_CONFIG, sources: getDefaultSources() }
+    const base = getBaseConfig(current)
     return { ...base, running: true, runningSince: now }
   })
 
@@ -97,7 +114,7 @@ export async function runCrawl(force = false): Promise<{ fetched: number; duplic
 
     // Always clear running flag, even on error
     await updateJsonWithRetry<CrawlConfig>(CRAWL_CONFIG_PATH, current => {
-      const base = current || { ...DEFAULT_CRAWL_CONFIG, sources: getDefaultSources() }
+      const base = getBaseConfig(current)
       return { ...base, lastRunAt: new Date().toISOString(), running: false, runningSince: undefined }
     }).catch(() => {})
 

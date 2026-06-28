@@ -224,6 +224,18 @@ const zh = {
     crawlStatusEnabled: '已开启',
     crawlStatusDisabled: '已关闭',
     crawlStatusNextRun: '下次触发',
+    crawlRunningSince: '本轮开始',
+    crawlContinuationTitle: '续跑监控',
+    crawlContinuationStatus: '续跑状态',
+    crawlContinuationScheduledAt: '最近调度',
+    crawlContinuationAttemptAt: '最近尝试',
+    crawlContinuationAcceptedAt: '最近接力成功',
+    crawlContinuationDetail: '续跑详情',
+    crawlContinuationStatusScheduled: '已排队',
+    crawlContinuationStatusAccepted: '已接力',
+    crawlContinuationStatusFailed: '失败',
+    crawlContinuationStatusUnknown: '未知',
+    crawlContinuationAlertStalled: '续跑链最近失败且当前未运行，链路可能已中断',
   },
 }
 
