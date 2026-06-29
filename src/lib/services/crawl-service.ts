@@ -56,11 +56,27 @@ export async function getCrawlLogs(): Promise<CrawlLogEntry[]> {
 export async function runCrawl(force = false): Promise<{ fetched: number; duplicates: number; errors: number; shouldContinue: boolean }> {
   const config = await getCrawlConfig()
 
-  // Skip if already running (with 10 min timeout safety)
-  if (config.running && config.runningSince) {
+  // Skip if already running (with 10 min timeout safety and stale flag recovery)
+  if (config.running && config.runningSince && !force) {
     const runningFor = Date.now() - new Date(config.runningSince).getTime()
-    if (runningFor < 10 * 60 * 1000) {
-      return { fetched: 0, duplicates: 0, errors: 0, shouldContinue: false }
+    const staleThreshold = 10 * 60 * 1000
+
+    if (runningFor < staleThreshold) {
+      // Check if this is a genuine run-in-progress or a stale flag
+      // Stale detection: runningSince is much newer than lastRunAt (flag was set but lastRunAt never updated)
+      const lastCompletedRunAt = config.lastRunAt ? new Date(config.lastRunAt).getTime() : 0
+      const staleMargin = 30_000 // 30s buffer
+      if (lastCompletedRunAt > 0 && new Date(config.runningSince).getTime() - lastCompletedRunAt > staleMargin) {
+        // runningSince is newer than lastRunAt — flag was set by a run that never completed
+        console.warn(`[crawl] detected stale running flag: runningSince=${config.runningSince} lastRunAt=${config.lastRunAt}, recovering`)
+        // Auto-clear the stale flag so this run can proceed (fall through to continue)
+        await updateJsonWithRetry<CrawlConfig>(CRAWL_CONFIG_PATH, current => {
+          const base = getBaseConfig(current)
+          return { ...base, running: false, runningSince: undefined }
+        }).catch(() => {})
+      } else {
+        return { fetched: 0, duplicates: 0, errors: 0, shouldContinue: false }
+      }
     }
   }
 
