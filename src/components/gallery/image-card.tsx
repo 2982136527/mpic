@@ -43,7 +43,7 @@ export function ImageCard({ image, onClick, priority = false }: Props) {
     <button
       type='button'
       onClick={onClick}
-      className='group relative mb-4 block w-full overflow-hidden rounded-2xl bg-[var(--glass-bg)] text-left shadow-sm break-inside-avoid transition-shadow hover:shadow-lg'
+      className='group relative mb-4 block w-full overflow-hidden rounded-2xl bg-[var(--glass-bg)] text-left shadow-sm break-inside-avoid transition duration-500 hover:shadow-lg'
     >
       <div
         aria-hidden='true'
@@ -72,7 +72,7 @@ export function ImageCard({ image, onClick, priority = false }: Props) {
           }
           setLoaded(true)
         }}
-        className={`relative block h-auto w-full transition-[opacity,transform] duration-500 group-hover:scale-[1.03] ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        className={`relative block h-auto w-full transition duration-500 group-hover:scale-[1.04] ${loaded ? 'opacity-100' : 'opacity-0'}`}
       />
       {showPreviewMeta && (
         <div className='pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/75 via-black/30 to-transparent px-3 pb-3 pt-10 text-white'>
