@@ -58,8 +58,10 @@ export function TimelineBar({ timeline, current, date }: Props) {
     if (open) {
       if (date && date.length >= 7) {
         setSelectedMonth(date.slice(0, 7))
+      } else if (date) {
+        setSelectedMonth(date)
       } else {
-        setSelectedMonth(timeline[0]?.yearMonth || null)
+        setSelectedMonth(null)
       }
     }
   }, [open, date, timeline])
