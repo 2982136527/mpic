@@ -1,4 +1,9 @@
-export const IMAGE_REPO_README = `# MPic 图片存储分片
+export const IMAGE_REPO_README = `<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://pic.20031104.xyz/icon.svg">
+  <img alt="MPic" src="https://pic.20031104.xyz/icon.svg" width="64" height="64">
+</picture>
+
+# MPic 图片存储分片
 
 本仓库由 [MPic](https://github.com/2982136527/mpic) 图床系统自动管理，用于存储上传的图片文件及索引数据。
 
