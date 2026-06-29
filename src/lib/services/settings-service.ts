@@ -27,5 +27,6 @@ function normalizeSettings(input: Partial<SiteSettings> | null | undefined): Sit
     allowRegistration: input?.allowRegistration ?? DEFAULT_SETTINGS.allowRegistration,
     enableCompress: input?.enableCompress ?? DEFAULT_SETTINGS.enableCompress,
     enableRandomApi: input?.enableRandomApi ?? DEFAULT_SETTINGS.enableRandomApi,
+    enableAccessLog: input?.enableAccessLog ?? DEFAULT_SETTINGS.enableAccessLog,
   }
 }

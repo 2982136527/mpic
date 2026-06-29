@@ -8,6 +8,7 @@ export type SiteSettings = {
   allowRegistration: boolean
   enableCompress: boolean
   enableRandomApi: boolean
+  enableAccessLog: boolean
 }
 
 export const DEFAULT_SETTINGS: SiteSettings = {
@@ -20,4 +21,5 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   allowRegistration: true,
   enableCompress: true,
   enableRandomApi: true,
+  enableAccessLog: false,
 }

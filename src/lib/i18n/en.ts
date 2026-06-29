@@ -305,6 +305,7 @@ const en = {
     accessPrevPage: 'Previous',
     accessNextPage: 'Next',
     accessPageIndicator: (page: number, totalPages: number) => `Page ${page} / ${totalPages}`,
+    enableAccessLog: 'Enable Access Logging',
   },
 }
 

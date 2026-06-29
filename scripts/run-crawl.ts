@@ -51,22 +51,9 @@ async function main() {
       const runningSince = latestConfig.runningSince ? new Date(latestConfig.runningSince).getTime() : null
       if (latestConfig.running && runningSince && Date.now() - runningSince < 10 * 60 * 1000) {
         stopReason = 'already_running'
-        await updateMonitor({
-          lastAttemptAt: new Date().toISOString(),
-          lastStatus: 'scheduled',
-          lastDetail: `GitHub Actions waiting for another crawl run to finish before batch ${batches + 1}`,
-          ...(runUrl ? { lastUrl: runUrl } : {}),
-        })
         await wait(Math.min(5_000, Math.max(0, deadline - Date.now())))
         continue
       }
-
-      await updateMonitor({
-        lastAttemptAt: new Date().toISOString(),
-        lastStatus: 'scheduled',
-        lastDetail: `GitHub Actions running batch ${batches + 1} enabledSources=${latestEnabledSources} elapsedMs=${Date.now() - (new Date(startedAt).getTime())}`,
-        ...(runUrl ? { lastUrl: runUrl } : {}),
-      })
 
       const result = await runCrawl(force)
       batches += 1

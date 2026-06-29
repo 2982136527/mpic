@@ -1,9 +1,34 @@
 import { getPublicJsonFile, updateJsonWithRetry } from '@/lib/github/client'
 import type { AccessImageCounter, AccessLogEntry, AccessLogsIndex, AccessLogType, AccessOverview } from '@/types/access'
+import type { SiteSettings } from '@/types/settings'
+import { DEFAULT_SETTINGS } from '@/types/settings'
 
 const ACCESS_LOGS_PATH = 'data/access-logs.json'
 const MAX_ACCESS_LOGS = 2000
 const MAX_IMAGE_COUNTERS = 500
+
+// In-memory toggle state — read from settings file once, cache for TTL
+let _cachedToggle: boolean | null = null
+let _cachedToggleAt = 0
+const TOGGLE_CACHE_TTL = 60_000
+
+async function isToggleEnabled(): Promise<boolean> {
+  const repo = getAccessLogsRepo()
+  if (!repo) return false
+
+  if (_cachedToggle !== null && Date.now() - _cachedToggleAt < TOGGLE_CACHE_TTL) {
+    return _cachedToggle
+  }
+
+  try {
+    const data = await getPublicJsonFile<SiteSettings>('data/settings.json')
+    _cachedToggle = data?.enableAccessLog ?? DEFAULT_SETTINGS.enableAccessLog
+  } catch {
+    _cachedToggle = DEFAULT_SETTINGS.enableAccessLog
+  }
+  _cachedToggleAt = Date.now()
+  return _cachedToggle
+}
 
 function getAccessLogsRepo() {
   const repo = normalizeEnvValue(process.env.ACCESS_LOGS_GITHUB_REPO)
@@ -25,6 +50,8 @@ function emptyIndex(): AccessLogsIndex {
 export async function appendAccessLog(entry: Omit<AccessLogEntry, 'id' | 'createdAt'>): Promise<void> {
   const repo = getAccessLogsRepo()
   if (!repo) return
+
+  if (!(await isToggleEnabled())) return
 
   await updateJsonWithRetry<AccessLogsIndex>(ACCESS_LOGS_PATH, current => {
     const index = current || emptyIndex()

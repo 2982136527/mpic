@@ -99,6 +99,15 @@ export function AdminSettingsForm({ settings, onSave }: Props) {
           />
           {t.admin.enableRandomApi}
         </label>
+        <label className='flex items-center gap-2 text-xs text-[var(--color-ink-soft)]'>
+          <input
+            type='checkbox'
+            checked={form.enableAccessLog}
+            onChange={e => setForm(f => ({ ...f, enableAccessLog: e.target.checked }))}
+            className='rounded'
+          />
+          {t.admin.enableAccessLog}
+        </label>
       </div>
 
       <div className='space-y-4'>
