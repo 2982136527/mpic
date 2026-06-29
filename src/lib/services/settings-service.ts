@@ -29,5 +29,6 @@ function normalizeSettings(input: Partial<SiteSettings> | null | undefined): Sit
     enableRandomApi: input?.enableRandomApi ?? DEFAULT_SETTINGS.enableRandomApi,
     enableAccessLog: input?.enableAccessLog ?? DEFAULT_SETTINGS.enableAccessLog,
     enableImagesApi: input?.enableImagesApi ?? DEFAULT_SETTINGS.enableImagesApi,
+    enableRateLimiter: input?.enableRateLimiter ?? DEFAULT_SETTINGS.enableRateLimiter,
   }
 }

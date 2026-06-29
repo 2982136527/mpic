@@ -10,6 +10,7 @@ export type SiteSettings = {
   enableRandomApi: boolean
   enableAccessLog: boolean
   enableImagesApi: boolean
+  enableRateLimiter: boolean
 }
 
 export const DEFAULT_SETTINGS: SiteSettings = {
@@ -24,4 +25,5 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   enableRandomApi: true,
   enableAccessLog: false,
   enableImagesApi: true,
+  enableRateLimiter: false,
 }
