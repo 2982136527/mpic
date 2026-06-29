@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import { isAdminLogin } from '@/lib/api/permissions'
-import { isLikelyBot, getClientIp } from '@/lib/bot/detect'
-import { isRateLimited } from '@/lib/bot/rate-limit'
 import { getSettings } from '@/lib/services/settings-service'
 
 export async function middleware(request: NextRequest) {
@@ -25,55 +23,17 @@ export async function middleware(request: NextRequest) {
 
   // Public APIs
   if (
-    pathname.startsWith('/api/cron/') ||
-    pathname.startsWith('/api/pixiv/proxy')
-  ) {
-    return NextResponse.next()
-  }
-
-  // Public APIs with bot detection
-  if (
     pathname.startsWith('/api/images') ||
     pathname.startsWith('/api/image/') ||
     pathname.startsWith('/api/random') ||
     pathname.startsWith('/api/timeline') ||
     pathname.startsWith('/api/visit') ||
-    pathname.startsWith('/api/auth')
+    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/cron/') ||
+    pathname.startsWith('/api/pixiv/proxy')
   ) {
-    const ip = getClientIp(request)
-    if (ip !== 'unknown') {
-      // Bot detection (always active)
-      if (isLikelyBot(request)) {
-        return NextResponse.json({ error: { code: 'BOT_DETECTED', message: 'Forbidden' } }, { status: 403 })
-      }
-      // Rate limiting (only if toggle is on in settings)
-      if (await isRateLimiterActive()) {
-        if (isRateLimited(ip)) {
-          return NextResponse.json({ error: { code: 'RATE_LIMITED', message: 'Too many requests' } }, { status: 429 })
-        }
-      }
-    }
     return NextResponse.next()
   }
-
-// Cache rate limiter toggle to avoid fetching settings on every request
-let _rlEnabled: boolean | null = null
-let _rlFetchedAt = 0
-const RL_CACHE_TTL = 30_000
-
-async function isRateLimiterActive(): Promise<boolean> {
-  if (_rlEnabled !== null && Date.now() - _rlFetchedAt < RL_CACHE_TTL) {
-    return _rlEnabled
-  }
-  try {
-    const settings = await getSettings()
-    _rlEnabled = settings.enableRateLimiter
-  } catch {
-    _rlEnabled = false
-  }
-  _rlFetchedAt = Date.now()
-  return _rlEnabled ?? false
-}
 
   const isAdminPage = pathname.startsWith('/admin')
   const isAdminApi = pathname === '/api/admin' || pathname.startsWith('/api/admin/')
