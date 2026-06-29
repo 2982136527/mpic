@@ -52,7 +52,7 @@ jobs:
           IMAGE_GITHUB_TOKEN: ${{ secrets.IMAGE_GITHUB_TOKEN }}
 
       - name: Dispatch next crawl
-        if: ${{ always() && steps.next.outputs.should_dispatch == 'true' }}
+        if: ${{ !failure() && steps.next.outputs.should_dispatch == 'true' }}
         run: |
           curl -sS -X POST \
             -H "Authorization: Bearer ${GITHUB_TOKEN}" \
