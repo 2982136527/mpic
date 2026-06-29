@@ -23,5 +23,5 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   enableCompress: true,
   enableRandomApi: true,
   enableAccessLog: false,
-  enableImagesApi: false,
+  enableImagesApi: true,
 }
