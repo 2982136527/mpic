@@ -1,11 +1,13 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://pic.20031104.xyz/icon.svg">
-  <img alt="MPic" src="https://pic.20031104.xyz/icon.svg" width="64" height="64">
-</picture>
-
 # MPic
 
 多用户公开相册图床系统，基于 GitHub 存储，前台部署在 Vercel，自动采集由 GitHub Actions 定时执行。
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://pic.20031104.xyz/icon.svg">
+    <img alt="MPic" src="https://pic.20031104.xyz/icon.svg" width="64" height="64">
+  </picture>
+</p>
 
 ## 当前架构
 
