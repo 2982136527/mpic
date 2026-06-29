@@ -205,6 +205,7 @@ const en = {
     crawlSettings: 'Crawl Settings',
     crawlEnabled: 'Enable Auto Crawl',
     crawlStartContinuous: 'Enable Auto Crawl',
+    crawlWakeContinuous: 'Wake Auto Crawl',
     crawlStopContinuous: 'Disable Auto Crawl',
     crawlContinuousStarting: 'Enabling...',
     crawlContinuousStopping: 'Disabling...',

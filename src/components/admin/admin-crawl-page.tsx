@@ -78,7 +78,7 @@ export function AdminCrawlPage({ config }: Props) {
     const res = await fetch('/api/admin/crawl', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ enabled }),
+      body: JSON.stringify({ enabled, ...(enabled ? { wake: true } : {}) }),
     })
     if (!res.ok) throw new Error('Save failed')
     const data = await res.json()
@@ -267,7 +267,7 @@ export function AdminCrawlPage({ config }: Props) {
   const animeSources = form.sources.filter(s => s.category === 'anime')
   const realSources = form.sources.filter(s => s.category === 'real')
   const statusBusy = crawlRunning
-  const startDisabled = continuousBusy !== 'idle' || status.enabled
+  const startDisabled = continuousBusy !== 'idle' || crawlRunning
   const stopDisabled = continuousBusy !== 'idle' || !status.enabled
   const continuation = status.continuation
   const continuationStatus = continuation?.lastStatus || 'unknown'
@@ -304,7 +304,11 @@ export function AdminCrawlPage({ config }: Props) {
               onClick={handleStartContinuous}
               disabled={startDisabled}
               className='rounded-xl bg-[var(--color-brand)] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-brand-strong)] disabled:opacity-50'>
-              {continuousBusy === 'starting' ? t.admin.crawlContinuousStarting : t.admin.crawlStartContinuous}
+              {continuousBusy === 'starting'
+                ? t.admin.crawlContinuousStarting
+                : status.enabled && !crawlRunning
+                  ? t.admin.crawlWakeContinuous
+                  : t.admin.crawlStartContinuous}
             </button>
             <button
               type='button'

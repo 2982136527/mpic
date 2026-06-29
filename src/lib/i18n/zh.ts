@@ -202,6 +202,7 @@ const zh = {
     crawlSettings: '采集设置',
     crawlEnabled: '启用自动采集',
     crawlStartContinuous: '开启自动采集',
+    crawlWakeContinuous: '唤醒自动采集',
     crawlStopContinuous: '关闭自动采集',
     crawlContinuousStarting: '开启中...',
     crawlContinuousStopping: '关闭中...',
