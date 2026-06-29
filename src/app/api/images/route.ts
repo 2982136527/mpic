@@ -1,5 +1,6 @@
 import { after, NextRequest } from 'next/server'
 import { listImages, buildImageLinks } from '@/lib/services/image-service'
+import { getSettings } from '@/lib/services/settings-service'
 import { createRequestId, ok, fail } from '@/lib/api/response'
 import { HttpError } from '@/lib/api/errors'
 import { appendAccessLog } from '@/lib/services/access-log-service'
@@ -9,6 +10,13 @@ export async function GET(request: NextRequest) {
   const requestId = createRequestId()
 
   try {
+    const settings = await getSettings()
+    if (!settings.enableImagesApi) {
+      const response = fail(requestId, 403, 'DISABLED', 'Public images API is disabled')
+      logImagesAccess(request, 403, 'disabled')
+      return response
+    }
+
     const page = Math.max(1, Number(request.nextUrl.searchParams.get('page')) || 1)
     const pageSize = Math.min(100, Math.max(1, Number(request.nextUrl.searchParams.get('pageSize')) || 30))
     const search = request.nextUrl.searchParams.get('search') || undefined

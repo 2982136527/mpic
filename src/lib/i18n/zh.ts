@@ -303,6 +303,7 @@ const zh = {
     accessNextPage: '下一页',
     accessPageIndicator: (page: number, totalPages: number) => `第 ${page} / ${totalPages} 页`,
     enableAccessLog: '启用访问日志记录',
+    enableImagesApi: '启用公开图片列表接口',
   },
 }
 

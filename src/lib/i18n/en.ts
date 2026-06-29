@@ -306,7 +306,7 @@ const en = {
     accessNextPage: 'Next',
     accessPageIndicator: (page: number, totalPages: number) => `Page ${page} / ${totalPages}`,
     enableAccessLog: 'Enable Access Logging',
-  },
+    enableImagesApi: 'Enable Public Images API',  },
 }
 
 export default en

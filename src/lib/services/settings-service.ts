@@ -28,5 +28,6 @@ function normalizeSettings(input: Partial<SiteSettings> | null | undefined): Sit
     enableCompress: input?.enableCompress ?? DEFAULT_SETTINGS.enableCompress,
     enableRandomApi: input?.enableRandomApi ?? DEFAULT_SETTINGS.enableRandomApi,
     enableAccessLog: input?.enableAccessLog ?? DEFAULT_SETTINGS.enableAccessLog,
+    enableImagesApi: input?.enableImagesApi ?? DEFAULT_SETTINGS.enableImagesApi,
   }
 }

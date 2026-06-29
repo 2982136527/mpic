@@ -106,7 +106,16 @@ export function AdminSettingsForm({ settings, onSave }: Props) {
             onChange={e => setForm(f => ({ ...f, enableAccessLog: e.target.checked }))}
             className='rounded'
           />
-          {t.admin.enableAccessLog}
+         {t.admin.enableAccessLog}
+       </label>
+        <label className='flex items-center gap-2 text-xs text-[var(--color-ink-soft)]'>
+          <input
+            type='checkbox'
+            checked={form.enableImagesApi}
+            onChange={e => setForm(f => ({ ...f, enableImagesApi: e.target.checked }))}
+            className='rounded'
+          />
+          {t.admin.enableImagesApi}
         </label>
       </div>
 

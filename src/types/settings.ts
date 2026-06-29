@@ -9,6 +9,7 @@ export type SiteSettings = {
   enableCompress: boolean
   enableRandomApi: boolean
   enableAccessLog: boolean
+  enableImagesApi: boolean
 }
 
 export const DEFAULT_SETTINGS: SiteSettings = {
@@ -22,4 +23,5 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   enableCompress: true,
   enableRandomApi: true,
   enableAccessLog: false,
+  enableImagesApi: false,
 }
