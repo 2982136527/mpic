@@ -307,7 +307,7 @@ const en = {
     accessPageIndicator: (page: number, totalPages: number) => `Page ${page} / ${totalPages}`,
     enableAccessLog: 'Enable Access Logging',
     enableImagesApi: 'Enable Public Images API',
-    enableRateLimiter: 'Enable IP Rate Limiter',  },
+  },
 }
 
 export default en
