@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { encodeTextBase64, getJsonFile, getPublicJsonFile, updateJsonWithRetry, upsertFile } from '@/lib/github/client'
+import { getJsonFile, getPublicJsonFile, updateJsonWithRetry } from '@/lib/github/client'
 import type { ImageRecord, ImagesIndex } from '@/types/image'
 
 const LEGACY_IMAGES_PATH = 'data/images.json'
@@ -153,15 +153,11 @@ export async function migrateLegacyImagesToShards(): Promise<{
     const shardImages = shards.get(descriptor.id) || []
     if (shardImages.length === 0) continue
 
-    await upsertFile({
-      path: descriptor.path,
-      contentBase64: encodeTextBase64(JSON.stringify({
-        version: 1,
-        shardId: descriptor.id,
-        images: shardImages,
-      } satisfies ImageShardFile, null, 2)),
-      message: `Migrate ${descriptor.path}`,
-    })
+    await updateJsonWithRetry<ImageShardFile>(descriptor.path, () => ({
+      version: 1,
+      shardId: descriptor.id,
+      images: shardImages,
+    }))
   }
 
   await updateJsonWithRetry<ImagesManifest>(IMAGES_MANIFEST_PATH, () => ({
