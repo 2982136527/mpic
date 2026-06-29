@@ -3,6 +3,7 @@ import { HttpError } from '@/lib/api/errors'
 
 const API_BASE = 'https://api.github.com'
 const RAW_READ_TTL_MS = 15_000
+const RECENT_WRITE_TTL_MS = 20_000
 
 type CachedRawFile = {
   expiresAt: number
@@ -12,6 +13,7 @@ type CachedRawFile = {
 
 declare global {
   var __mpicRawFileCache: Map<string, CachedRawFile> | undefined
+  var __mpicRecentGithubWrites: Map<string, number> | undefined
 }
 
 type RequestOptions = {
@@ -35,8 +37,36 @@ function getRawFileCache() {
   return globalThis.__mpicRawFileCache
 }
 
+function getRecentGithubWrites() {
+  if (!globalThis.__mpicRecentGithubWrites) {
+    globalThis.__mpicRecentGithubWrites = new Map()
+  }
+  return globalThis.__mpicRecentGithubWrites
+}
+
 function buildRawFileUrl(env: GithubRepoEnv, path: string): string {
   return `https://raw.githubusercontent.com/${encodeURIComponent(env.owner)}/${encodeURIComponent(env.repo)}/${encodeURIComponent(env.branch)}/${encodeSegments(path)}`
+}
+
+function buildFileCacheKey(env: GithubRepoEnv, path: string): string {
+  return `${env.owner}/${env.repo}/${env.branch}/${path}`
+}
+
+function markRecentGithubWrite(env: GithubRepoEnv, path: string) {
+  const key = buildFileCacheKey(env, path)
+  getRawFileCache().delete(key)
+  getRecentGithubWrites().set(key, Date.now() + RECENT_WRITE_TTL_MS)
+}
+
+function hasRecentGithubWrite(key: string): boolean {
+  const cache = getRecentGithubWrites()
+  const expiresAt = cache.get(key)
+  if (!expiresAt) return false
+  if (expiresAt <= Date.now()) {
+    cache.delete(key)
+    return false
+  }
+  return true
 }
 
 async function githubRequestWithEnv<T>(env: GithubRepoEnv, endpoint: string, options: RequestOptions = {}): Promise<{ data: T; status: number }> {
@@ -140,6 +170,7 @@ export async function upsertFile(params: {
       ...(params.sha ? { sha: params.sha } : {}),
     },
   })
+  markRecentGithubWrite(env, params.path)
 }
 
 export async function deleteFile(params: {
@@ -157,6 +188,7 @@ export async function deleteFile(params: {
       sha: params.sha,
     },
   })
+  markRecentGithubWrite(env, params.path)
 }
 
 export async function uploadBinary(path: string, buffer: Buffer, message: string, repo?: string): Promise<void> {
@@ -227,38 +259,49 @@ export async function getRepoSize(repoName: string): Promise<number> {
 
 async function getPublicTextFile(path: string, repo?: string): Promise<string | null> {
   const env = repo ? getGithubEnvForRepo(repo) : getImageGithubEnv()
-  const key = `${env.owner}/${env.repo}/${env.branch}/${path}`
+  const key = buildFileCacheKey(env, path)
   const cache = getRawFileCache()
   const now = Date.now()
   const cached = cache.get(key)
+  const recentlyWritten = hasRecentGithubWrite(key)
 
-  if (cached && cached.expiresAt > now && cached.value !== null) {
+  if (!recentlyWritten && cached && cached.expiresAt > now && cached.value !== null) {
     return cached.value
   }
 
-  if (cached?.promise) {
+  if (!recentlyWritten && cached?.promise) {
     return cached.promise
   }
 
   const promise = (async () => {
-    try {
-      const response = await fetch(buildRawFileUrl(env, path), {
-        headers: {
-          Accept: 'text/plain',
-        },
-        cache: 'no-store',
-      })
-
-      if (response.ok) {
-        const text = await response.text()
-        cache.set(key, {
-          value: text,
-          expiresAt: Date.now() + RAW_READ_TTL_MS,
+    if (!recentlyWritten) {
+      try {
+        const response = await fetch(buildRawFileUrl(env, path), {
+          headers: {
+            Accept: 'text/plain',
+          },
+          cache: 'no-store',
         })
-        return text
+
+        if (response.ok) {
+          const text = await response.text()
+          cache.set(key, {
+            value: text,
+            expiresAt: Date.now() + RAW_READ_TTL_MS,
+          })
+          return text
+        }
+
+        if (response.status === 404 && !repo) {
+          cache.set(key, {
+            value: null,
+            expiresAt: Date.now() + RAW_READ_TTL_MS,
+          })
+          return null
+        }
+      } catch {
+        // Fall back to the GitHub API below.
       }
-    } catch {
-      // Fall back to the GitHub API below.
     }
 
     const apiFile = await getFile(path, repo)

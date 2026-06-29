@@ -6,6 +6,8 @@
     "crawl:once": "tsx scripts/run-crawl.ts",
     "dev": "next dev",
     "build": "next build",
+    "images:backfill": "tsx scripts/backfill-image-dimensions.ts",
+    "images:migrate": "tsx scripts/migrate-image-store.ts",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit"

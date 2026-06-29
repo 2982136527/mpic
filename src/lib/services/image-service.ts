@@ -1,14 +1,13 @@
-import { getJsonFile, getPublicJsonFile, updateJsonWithRetry, uploadBinary, getFile, deleteFile } from '@/lib/github/client'
+import { uploadBinary, getFile, deleteFile } from '@/lib/github/client'
 import { fetchImageBuffer } from '@/lib/crawl/fetcher'
 import { getDefaultRepoName } from '@/lib/github/env'
 import { buildPixivProxyUrl, getPixivFetchHeaders } from '@/lib/pixiv'
+import { getImageRecordById, listAllImageRecords, updateImageRecord, upsertImageRecord } from '@/lib/services/image-store'
 import { getActiveRepo, updateRepoSize } from '@/lib/services/repo-service'
 import { getSettings } from '@/lib/services/settings-service'
 import { updateUserStats } from '@/lib/services/user-service'
 import { generateId } from '@/lib/utils'
-import type { ImageExif, ImageLinks, ImageRecord, ImagesIndex } from '@/types/image'
-
-const IMAGES_PATH = 'data/images.json'
+import type { ImageExif, ImageLinks, ImageRecord } from '@/types/image'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
@@ -52,10 +51,6 @@ async function compressImage(buffer: Buffer, mimeType: string): Promise<{ buffer
     .toBuffer()
 
   return { buffer: resized, mimeType: outputFormat === 'webp' ? 'image/webp' : 'image/jpeg' }
-}
-
-function emptyIndex(): ImagesIndex {
-  return { version: 1, images: [] }
 }
 
 export function buildImageLinks(record: ImageRecord): ImageLinks {
@@ -134,11 +129,11 @@ export async function listImages(params: {
     beforeId,
   } = params
 
-  const data = await getPublicJsonFile<ImagesIndex>(IMAGES_PATH)
-  if (!data) return { images: [], total: 0, hasMore: false }
+  const allImages = await listAllImageRecords()
+  if (allImages.length === 0) return { images: [], total: 0, hasMore: false }
 
   const settings = publicOnly ? await getSettings() : null
-  let images = data.images.filter(img => !img.deletedAt)
+  let images = allImages.filter(img => !img.deletedAt)
 
   if (publicOnly) {
     images = images.filter(img => isPubliclyVisible(img, settings))
@@ -197,10 +192,8 @@ function getImageSortValue(img: ImageRecord): string {
 }
 
 export async function getImage(id: string, options?: { publicOnly?: boolean }): Promise<ImageRecord | null> {
-  const data = await getPublicJsonFile<ImagesIndex>(IMAGES_PATH)
-  if (!data) return null
-
-  const image = data.images.find(img => img.id === id && !img.deletedAt) || null
+  const image = await getImageRecordById(id)
+  if (image?.deletedAt) return null
   if (!image) return null
   if (!options?.publicOnly) return image
 
@@ -209,11 +202,9 @@ export async function getImage(id: string, options?: { publicOnly?: boolean }): 
 }
 
 export async function getRandomPublicImage(): Promise<{ record: ImageRecord; links: ImageLinks } | null> {
-  const data = await getPublicJsonFile<ImagesIndex>(IMAGES_PATH)
-  if (!data) return null
-
+  const images = await listAllImageRecords()
   const settings = await getSettings()
-  const publicImages = data.images.filter(img => !img.deletedAt && isPubliclyVisible(img, settings))
+  const publicImages = images.filter(img => !img.deletedAt && isPubliclyVisible(img, settings))
   if (publicImages.length === 0) return null
 
   const record = publicImages[Math.floor(Math.random() * publicImages.length)]
@@ -261,8 +252,7 @@ export async function uploadImage(params: {
   }
 
   const hash = await hashBuffer(buffer)
-  const existingFile = await getJsonFile<ImagesIndex>(IMAGES_PATH)
-  const existingImages = existingFile?.data.images || []
+  const existingImages = await listAllImageRecords()
   const sourceMatch = findImageBySource(existingImages, sourceProvider, sourceId)
   const duplicate = existingImages.find(img => img.hash === hash && !img.deletedAt && img.id !== sourceMatch?.id) || null
   if (duplicate) {
@@ -407,19 +397,12 @@ export async function createExternalImage(params: {
 }
 
 export async function deleteImage(id: string, login: string, isAdmin: boolean): Promise<void> {
-  const file = await getJsonFile<ImagesIndex>(IMAGES_PATH)
-  if (!file) throw new Error('Images index not found')
-
-  const image = file.data.images.find(img => img.id === id)
+  const image = await getImageRecordById(id)
   if (!image) throw new Error('Image not found')
   if (!isAdmin && image.uploaderLogin !== login) throw new Error('Not authorized')
 
   if (isAdmin) {
-    await updateJsonWithRetry<ImagesIndex>(IMAGES_PATH, current => {
-      const index = current || emptyIndex()
-      index.images = index.images.filter(img => img.id !== id)
-      return index
-    })
+    await updateImageRecord(id, () => null)
 
     if (image.path) {
       const fileOnGithub = await getFile(image.path, image.repo)
@@ -428,12 +411,7 @@ export async function deleteImage(id: string, login: string, isAdmin: boolean): 
       }
     }
   } else {
-    await updateJsonWithRetry<ImagesIndex>(IMAGES_PATH, current => {
-      const index = current || emptyIndex()
-      const currentImage = index.images.find(item => item.id === id)
-      if (currentImage) currentImage.deletedAt = new Date().toISOString()
-      return index
-    })
+    await updateImageRecord(id, current => ({ ...current, deletedAt: new Date().toISOString() }))
   }
 
   await updateUserStats(image.uploaderLogin, -image.size, -1)
@@ -443,10 +421,10 @@ export async function deleteImage(id: string, login: string, isAdmin: boolean): 
 }
 
 export async function mirrorExternalPixivImages(limit = 20): Promise<{ mirrored: number; failed: number }> {
-  const file = await getPublicJsonFile<ImagesIndex>(IMAGES_PATH)
-  if (!file) return { mirrored: 0, failed: 0 }
+  const images = await listAllImageRecords()
+  if (images.length === 0) return { mirrored: 0, failed: 0 }
 
-  const targets = file.images
+  const targets = images
     .filter((image): image is ImageRecord & { externalUrl: string; sourceProvider: 'pixiv'; sourceId: string } =>
       !image.deletedAt &&
       image.storageKind === 'external' &&
@@ -488,10 +466,10 @@ export async function mirrorExternalPixivImages(limit = 20): Promise<{ mirrored:
 }
 
 export async function getUserStats(login: string): Promise<{ imageCount: number; totalSize: number }> {
-  const data = await getPublicJsonFile<ImagesIndex>(IMAGES_PATH)
-  if (!data) return { imageCount: 0, totalSize: 0 }
+  const images = await listAllImageRecords()
+  if (images.length === 0) return { imageCount: 0, totalSize: 0 }
 
-  const userImages = data.images.filter(img => img.uploaderLogin === login && !img.deletedAt)
+  const userImages = images.filter(img => img.uploaderLogin === login && !img.deletedAt)
   return {
     imageCount: userImages.length,
     totalSize: userImages.reduce((sum, img) => sum + img.size, 0),
@@ -499,11 +477,11 @@ export async function getUserStats(login: string): Promise<{ imageCount: number;
 }
 
 export async function getTimeline(publicOnly = false): Promise<{ yearMonth: string; count: number }[]> {
-  const data = await getPublicJsonFile<ImagesIndex>(IMAGES_PATH)
-  if (!data) return []
+  const data = await listAllImageRecords()
+  if (data.length === 0) return []
 
   const settings = publicOnly ? await getSettings() : null
-  let images = data.images.filter(img => !img.deletedAt)
+  let images = data.filter(img => !img.deletedAt)
   if (publicOnly) {
     images = images.filter(img => isPubliclyVisible(img, settings))
   }
@@ -523,11 +501,11 @@ export async function getExifFilters(publicOnly = false): Promise<{
   cameras: { name: string; count: number }[]
   lenses: { name: string; count: number }[]
 }> {
-  const data = await getPublicJsonFile<ImagesIndex>(IMAGES_PATH)
-  if (!data) return { cameras: [], lenses: [] }
+  const data = await listAllImageRecords()
+  if (data.length === 0) return { cameras: [], lenses: [] }
 
   const settings = publicOnly ? await getSettings() : null
-  let images = data.images.filter(img => !img.deletedAt)
+  let images = data.filter(img => !img.deletedAt)
   if (publicOnly) {
     images = images.filter(img => isPubliclyVisible(img, settings))
   }
@@ -560,8 +538,8 @@ export async function getAdminStats(): Promise<{
   totalUsers: number
   todayUploads: number
 }> {
-  const data = await getPublicJsonFile<ImagesIndex>(IMAGES_PATH)
-  const images = data?.images.filter(img => !img.deletedAt) || []
+  const data = await listAllImageRecords()
+  const images = data.filter(img => !img.deletedAt)
 
   const today = new Date().toISOString().slice(0, 10)
   const todayUploads = images.filter(img => img.createdAt.startsWith(today)).length
@@ -578,26 +556,18 @@ export async function getAdminStats(): Promise<{
 }
 
 export async function updateImagePrivacy(id: string, isPublic: boolean): Promise<void> {
-  await updateJsonWithRetry<ImagesIndex>(IMAGES_PATH, current => {
-    const index = current || emptyIndex()
-    const img = index.images.find(item => item.id === id)
-    if (img) img.isPublic = isPublic
-    return index
-  })
+  await updateImageRecord(id, current => ({ ...current, isPublic }))
 }
 
 export async function updateImageAlbum(id: string, albumId: string | null): Promise<void> {
-  await updateJsonWithRetry<ImagesIndex>(IMAGES_PATH, current => {
-    const index = current || emptyIndex()
-    const img = index.images.find(item => item.id === id)
-    if (img) {
-      if (albumId) {
-        img.albumId = albumId
-      } else {
-        delete img.albumId
-      }
+  await updateImageRecord(id, current => {
+    const next = { ...current }
+    if (albumId) {
+      next.albumId = albumId
+    } else {
+      delete next.albumId
     }
-    return index
+    return next
   })
 }
 
@@ -608,30 +578,16 @@ async function hashBuffer(buffer: Buffer): Promise<string> {
 }
 
 async function findDuplicateByHash(hash: string): Promise<ImageRecord | null> {
-  const data = await getPublicJsonFile<ImagesIndex>(IMAGES_PATH)
-  if (!data) return null
-  return data.images.find(img => img.hash === hash && !img.deletedAt) || null
+  const data = await listAllImageRecords()
+  return data.find(img => img.hash === hash && !img.deletedAt) || null
 }
 
 async function insertImageRecord(record: ImageRecord): Promise<void> {
-  await updateJsonWithRetry<ImagesIndex>(IMAGES_PATH, current => {
-    const index = current || emptyIndex()
-    index.images.unshift(record)
-    return index
-  })
+  await upsertImageRecord(record)
 }
 
 async function replaceImageRecord(record: ImageRecord): Promise<void> {
-  await updateJsonWithRetry<ImagesIndex>(IMAGES_PATH, current => {
-    const index = current || emptyIndex()
-    const existingIndex = index.images.findIndex(image => image.id === record.id)
-    if (existingIndex >= 0) {
-      index.images[existingIndex] = record
-    } else {
-      index.images.unshift(record)
-    }
-    return index
-  })
+  await upsertImageRecord(record)
 }
 
 function findImageBySource(images: ImageRecord[], sourceProvider?: string, sourceId?: string): ImageRecord | null {
