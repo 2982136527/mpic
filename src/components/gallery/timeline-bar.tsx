@@ -7,17 +7,20 @@ import { useLang } from '@/lib/i18n/context'
 type TimelineItem = {
   yearMonth: string
   count: number
+  days: { day: string; count: number }[]
 }
 
 type Props = {
   timeline: TimelineItem[]
   current: string
+  date: string
 }
 
-export function TimelineBar({ timeline, current }: Props) {
+export function TimelineBar({ timeline, current, date }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [open, setOpen] = useState(false)
+  const [expandedMonth, setExpandedMonth] = useState<string | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   const { t } = useLang()
 
@@ -29,18 +32,44 @@ export function TimelineBar({ timeline, current }: Props) {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const handleSelect = (yearMonth: string) => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (yearMonth === current) {
-      params.delete('yearMonth')
-    } else if (yearMonth) {
-      params.set('yearMonth', yearMonth)
-    } else {
-      params.delete('yearMonth')
+  useEffect(() => {
+    if (open && date) {
+      const ym = date.length > 7 ? date.slice(0, 7) : date
+      setExpandedMonth(ym)
+    } else if (!open) {
+      setExpandedMonth(null)
     }
+  }, [open, date])
+
+  const handleSelectMonth = (ym: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('date', ym)
+    params.delete('yearMonth')
     params.delete('page')
     router.push(`/?${params.toString()}`)
     setOpen(false)
+  }
+
+  const handleSelectDay = (day: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('date', day)
+    params.delete('yearMonth')
+    params.delete('page')
+    router.push(`/?${params.toString()}`)
+    setOpen(false)
+  }
+
+  const handleClear = () => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('date')
+    params.delete('yearMonth')
+    params.delete('page')
+    router.push(`/?${params.toString()}`)
+    setOpen(false)
+  }
+
+  const toggleMonth = (ym: string) => {
+    setExpandedMonth(prev => (prev === ym ? null : ym))
   }
 
   if (timeline.length === 0) return null
@@ -50,8 +79,29 @@ export function TimelineBar({ timeline, current }: Props) {
     return t.gallery.yearMonth(year, month)
   }
 
-  const currentLabel = current ? formatYearMonth(current) : t.gallery.allTime
-  const currentCount = current ? timeline.find(item => item.yearMonth === current)?.count || 0 : timeline.reduce((s, item) => s + item.count, 0)
+  const formatDay = (day: string) => {
+    const [, month, d] = day.split('-')
+    return `${parseInt(month)}月${parseInt(d)}日`
+  }
+
+  let currentLabel: string
+  let currentCount: number
+  if (date && date.length > 7) {
+    const ym = date.slice(0, 7)
+    const monthItem = timeline.find(item => item.yearMonth === ym)
+    const dayItem = monthItem?.days.find(d => d.day === date)
+    currentLabel = formatDay(date)
+    currentCount = dayItem?.count || 0
+  } else if (date) {
+    const item = timeline.find(item => item.yearMonth === date)
+    currentLabel = formatYearMonth(date)
+    currentCount = item?.count || 0
+  } else {
+    currentLabel = t.gallery.allTime
+    currentCount = timeline.reduce((s, item) => s + item.count, 0)
+  }
+
+  const totalCount = timeline.reduce((s, item) => s + item.count, 0)
 
   return (
     <div className={`relative mb-4 ${open ? 'z-50' : 'z-10'}`} ref={ref}>
@@ -74,31 +124,58 @@ export function TimelineBar({ timeline, current }: Props) {
 
       {open && (
         <div
-          className='absolute left-0 top-full z-[60] mt-2 w-56 origin-top-left overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-white/95 shadow-xl backdrop-blur-xl'
+          className='absolute left-0 top-full z-[60] mt-2 w-64 origin-top-left overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-white/95 shadow-xl backdrop-blur-xl'
           style={{ animation: 'jelly-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' }}>
-          <div className='max-h-72 overflow-y-auto p-1.5'>
+          <div className='max-h-80 overflow-y-auto p-1.5'>
             <button
               type='button'
-              onClick={() => handleSelect('')}
+              onClick={handleClear}
               className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition hover:bg-[var(--color-brand)]/10 ${
-                !current ? 'bg-[var(--color-brand)]/10 font-medium text-[var(--color-brand)]' : 'text-[var(--color-ink)]'
+                !date ? 'bg-[var(--color-brand)]/10 font-medium text-[var(--color-brand)]' : 'text-[var(--color-ink)]'
               }`}>
               <span>{t.gallery.allTime}</span>
-              <span className='text-xs text-[var(--color-ink-soft)]'>{timeline.reduce((s, item) => s + item.count, 0)}</span>
+              <span className='text-xs text-[var(--color-ink-soft)]'>{totalCount}</span>
             </button>
 
             {timeline.map((item, i) => (
-              <button
-                key={item.yearMonth}
-                type='button'
-                onClick={() => handleSelect(item.yearMonth)}
-                className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition hover:bg-[var(--color-brand)]/10 ${
-                  current === item.yearMonth ? 'bg-[var(--color-brand)]/10 font-medium text-[var(--color-brand)]' : 'text-[var(--color-ink)]'
-                }`}
-                style={{ animationDelay: `${(i + 1) * 30}ms`, animation: 'jelly-slide 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards', opacity: 0 }}>
-                <span>{formatYearMonth(item.yearMonth)}</span>
-                <span className='text-xs text-[var(--color-ink-soft)]'>{item.count} {t.gallery.countImages}</span>
-              </button>
+              <div key={item.yearMonth}>
+                <button
+                  type='button'
+                  onClick={() => (item.days.length > 1 ? toggleMonth(item.yearMonth) : handleSelectMonth(item.yearMonth))}
+                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition hover:bg-[var(--color-brand)]/10 ${
+                    date === item.yearMonth || date?.startsWith(item.yearMonth + '-')
+                      ? 'bg-[var(--color-brand)]/10 font-medium text-[var(--color-brand)]'
+                      : 'text-[var(--color-ink)]'
+                  }`}
+                  style={{ animationDelay: `${(i + 1) * 30}ms`, animation: 'jelly-slide 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards', opacity: 0 }}>
+                  <span className='flex items-center gap-1.5'>
+                    {item.days.length > 1 && (
+                      <svg className={`transition-transform duration-200 ${expandedMonth === item.yearMonth ? 'rotate-90' : ''}`} width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2.5' strokeLinecap='round' strokeLinejoin='round'>
+                        <polyline points='9 18 15 12 9 6' />
+                      </svg>
+                    )}
+                    {formatYearMonth(item.yearMonth)}
+                  </span>
+                  <span className='text-xs text-[var(--color-ink-soft)]'>{item.count} {t.gallery.countImages}</span>
+                </button>
+
+                {expandedMonth === item.yearMonth && item.days.length > 1 && (
+                  <div className='ml-4 border-l border-[var(--color-border-strong)] pl-2'>
+                    {item.days.map(dayItem => (
+                      <button
+                        key={dayItem.day}
+                        type='button'
+                        onClick={() => handleSelectDay(dayItem.day)}
+                        className={`flex w-full items-center justify-between rounded-xl px-3 py-1.5 text-left text-sm transition hover:bg-[var(--color-brand)]/10 ${
+                          date === dayItem.day ? 'bg-[var(--color-brand)]/10 font-medium text-[var(--color-brand)]' : 'text-[var(--color-ink)]'
+                        }`}>
+                        <span>{formatDay(dayItem.day)}</span>
+                        <span className='text-xs text-[var(--color-ink-soft)]'>{dayItem.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </div>

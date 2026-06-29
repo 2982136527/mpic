@@ -13,6 +13,7 @@ type Props = {
   initialHasMore: boolean
   search: string
   yearMonth?: string
+  date?: string
   camera?: string
   lens?: string
 }
@@ -28,7 +29,7 @@ type NetworkInfo = {
   saveData?: boolean
 }
 
-export function GalleryContent({ initialImages, initialHasMore, search, yearMonth, camera, lens }: Props) {
+export function GalleryContent({ initialImages, initialHasMore, search, yearMonth, date, camera, lens }: Props) {
   const [images, setImages] = useState(initialImages)
   const [hasMore, setHasMore] = useState(initialHasMore)
   const [loading, setLoading] = useState(false)
@@ -85,6 +86,7 @@ export function GalleryContent({ initialImages, initialHasMore, search, yearMont
       params.set('publicOnly', 'true')
       if (search) params.set('search', search)
       if (yearMonth) params.set('yearMonth', yearMonth)
+      if (date) params.set('date', date)
       if (camera) params.set('camera', camera)
       if (lens) params.set('lens', lens)
       if (cursor) {
@@ -108,7 +110,7 @@ export function GalleryContent({ initialImages, initialHasMore, search, yearMont
     } finally {
       setLoading(false)
     }
-  }, [loading, hasMore, cursor, search, yearMonth, camera, lens, preloadImages])
+  }, [loading, hasMore, cursor, search, yearMonth, date, camera, lens, preloadImages])
 
   const sentinelCallback = useCallback(
     (node: HTMLDivElement | null) => {

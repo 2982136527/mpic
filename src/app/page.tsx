@@ -14,7 +14,7 @@ import type { ImageRecord, ImageLinks } from '@/types/image'
 type ImageWithLinks = ImageRecord & { links: ImageLinks }
 
 type PageProps = {
-  searchParams: Promise<{ search?: string; page?: string; yearMonth?: string; camera?: string; lens?: string }>
+  searchParams: Promise<{ search?: string; page?: string; yearMonth?: string; date?: string; camera?: string; lens?: string }>
 }
 
 export default async function HomePage({ searchParams }: PageProps) {
@@ -22,19 +22,20 @@ export default async function HomePage({ searchParams }: PageProps) {
   const search = params.search || ''
   const page = Math.max(1, Number(params.page) || 1)
   const yearMonth = params.yearMonth || ''
+  const date = params.date || ''
   const camera = params.camera || ''
   const lens = params.lens || ''
 
   let images: ImageWithLinks[] = []
   let hasMore = false
   let total = 0
-  let timeline: { yearMonth: string; count: number }[] = []
+  let timeline: { yearMonth: string; count: number; days: { day: string; count: number }[] }[] = []
   let cameras: { name: string; count: number }[] = []
   let lenses: { name: string; count: number }[] = []
 
   try {
     const [result, tl] = await Promise.all([
-      listImages({ page, pageSize: 30, search, publicOnly: true, yearMonth: yearMonth || undefined, camera: camera || undefined, lens: lens || undefined }),
+      listImages({ page, pageSize: 30, search, publicOnly: true, yearMonth: date ? date.slice(0, 7) : (yearMonth || undefined), date: date || undefined, camera: camera || undefined, lens: lens || undefined }),
       getTimeline(true),
     ])
     images = result.images.map(img => ({
@@ -68,7 +69,7 @@ export default async function HomePage({ searchParams }: PageProps) {
         {timeline.length > 0 && (
           <Suspense>
             <div className='relative z-40 animate-fade-in-up animate-stagger-1'>
-              <TimelineBar timeline={timeline} current={yearMonth} />
+              <TimelineBar timeline={timeline} current={yearMonth} date={date} />
             </div>
           </Suspense>
         )}
@@ -85,12 +86,13 @@ export default async function HomePage({ searchParams }: PageProps) {
           <EmptyState />
         ) : (
           <GalleryContent
-            key={[search, yearMonth, camera, lens].join('|')}
+            key={[search, date || yearMonth, camera, lens].join('|')}
             initialImages={images}
             initialHasMore={hasMore}
             search={search}
-            yearMonth={yearMonth}
-            camera={camera}
+          yearMonth={yearMonth}
+          date={date}
+          camera={camera}
             lens={lens}
           />
         )}

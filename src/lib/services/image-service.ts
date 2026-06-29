@@ -110,6 +110,7 @@ export async function listImages(params: {
   publicOnly?: boolean
   albumId?: string
   yearMonth?: string
+  date?: string
   camera?: string
   lens?: string
   before?: string
@@ -123,6 +124,7 @@ export async function listImages(params: {
     publicOnly,
     albumId,
     yearMonth,
+    date,
     camera,
     lens,
     before,
@@ -154,6 +156,9 @@ export async function listImages(params: {
 
   if (yearMonth) {
     images = images.filter(img => (img.exif?.shootDate || img.createdAt).startsWith(yearMonth))
+  }
+  if (date) {
+    images = images.filter(img => (img.exif?.shootDate || img.createdAt).startsWith(date))
   }
 
   if (camera) {
@@ -476,7 +481,7 @@ export async function getUserStats(login: string): Promise<{ imageCount: number;
   }
 }
 
-export async function getTimeline(publicOnly = false): Promise<{ yearMonth: string; count: number }[]> {
+export async function getTimeline(publicOnly = false): Promise<{ yearMonth: string; count: number; days: { day: string; count: number }[] }[]> {
   const data = await listAllImageRecords()
   if (data.length === 0) return []
 
@@ -486,14 +491,26 @@ export async function getTimeline(publicOnly = false): Promise<{ yearMonth: stri
     images = images.filter(img => isPubliclyVisible(img, settings))
   }
 
-  const counts = new Map<string, number>()
+  const monthCounts = new Map<string, number>()
+  const dayCounts = new Map<string, Map<string, number>>()
   for (const img of images) {
-    const ym = (img.exif?.shootDate || img.createdAt).slice(0, 7)
-    counts.set(ym, (counts.get(ym) || 0) + 1)
+    const dateStr = img.exif?.shootDate || img.createdAt
+    const ym = dateStr.slice(0, 7)
+    const day = dateStr.slice(0, 10)
+    monthCounts.set(ym, (monthCounts.get(ym) || 0) + 1)
+    if (!dayCounts.has(ym)) dayCounts.set(ym, new Map())
+    const dayMap = dayCounts.get(ym)!
+    dayMap.set(day, (dayMap.get(day) || 0) + 1)
   }
 
-  return Array.from(counts.entries())
-    .map(([yearMonth, count]) => ({ yearMonth, count }))
+  return Array.from(monthCounts.entries())
+    .map(([yearMonth, count]) => ({
+      yearMonth,
+      count,
+      days: Array.from((dayCounts.get(yearMonth) || new Map()).entries())
+        .map(([day, dayCount]) => ({ day, count: dayCount }))
+        .sort((a, b) => b.day.localeCompare(a.day)),
+    }))
     .sort((a, b) => b.yearMonth.localeCompare(a.yearMonth))
 }
 
