@@ -11,6 +11,14 @@ export const metadata: Metadata = {
     template: `%s | ${siteMeta.name}`,
   },
   description: siteMeta.description,
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/icon.svg',
+  },
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

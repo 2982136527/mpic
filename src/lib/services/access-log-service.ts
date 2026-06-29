@@ -4,10 +4,9 @@ import type { AccessImageCounter, AccessLogEntry, AccessLogsIndex, AccessLogType
 const ACCESS_LOGS_PATH = 'data/access-logs.json'
 const MAX_ACCESS_LOGS = 2000
 const MAX_IMAGE_COUNTERS = 500
-const PERSISTED_ACCESS_TYPES = new Set<AccessLogType>(['random_api', 'image_meta_api'])
 
 function getAccessLogsRepo() {
-  const repo = process.env.ACCESS_LOGS_GITHUB_REPO?.trim()
+  const repo = normalizeEnvValue(process.env.ACCESS_LOGS_GITHUB_REPO)
   return repo || undefined
 }
 
@@ -26,7 +25,6 @@ function emptyIndex(): AccessLogsIndex {
 export async function appendAccessLog(entry: Omit<AccessLogEntry, 'id' | 'createdAt'>): Promise<void> {
   const repo = getAccessLogsRepo()
   if (!repo) return
-  if (!PERSISTED_ACCESS_TYPES.has(entry.type)) return
 
   await updateJsonWithRetry<AccessLogsIndex>(ACCESS_LOGS_PATH, current => {
     const index = current || emptyIndex()
@@ -154,4 +152,10 @@ function upsertImageCounter(counters: AccessImageCounter[], incoming: AccessImag
   if (counters.length > MAX_IMAGE_COUNTERS) {
     counters.length = MAX_IMAGE_COUNTERS
   }
+}
+
+function normalizeEnvValue(value: string | undefined): string | undefined {
+  if (typeof value !== 'string') return undefined
+  const normalized = value.replace(/\\n/g, '').trim()
+  return normalized || undefined
 }
