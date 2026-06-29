@@ -108,15 +108,16 @@ export function AdminSettingsForm({ settings, onSave }: Props) {
           />
          {t.admin.enableAccessLog}
        </label>
-        <label className='flex items-center gap-2 text-xs text-[var(--color-ink-soft)]'>
-          <input
-            type='checkbox'
-            checked={form.enableImagesApi}
-            onChange={e => setForm(f => ({ ...f, enableImagesApi: e.target.checked }))}
-            className='rounded'
-          />
-          {t.admin.enableImagesApi}
-        </label>
+       <label className='flex items-center gap-2 text-xs text-[var(--color-ink-soft)]'>
+         <input
+           type='checkbox'
+           checked={form.enableImagesApi}
+           onChange={e => setForm(f => ({ ...f, enableImagesApi: e.target.checked }))}
+           className='rounded'
+         />
+         {t.admin.enableImagesApi}
+       </label>
+        <p className='ml-6 text-[11px] text-[var(--color-ink-soft)]/60'>关闭后公开页面的瀑布流将无法滚动加载更多图片</p>
       </div>
 
       <div className='space-y-4'>
