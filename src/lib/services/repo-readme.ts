@@ -22,7 +22,4 @@ data/
 - 当单个仓库接近 4GB 时，系统会自动创建新的分片仓库。
 - 虽然本仓库是公开的，但文件名使用随机哈希值生成，外部无法直接遍历。
 
----
-
-*This repository is automatically managed by the [MPic](https://github.com/2982136527/mpic) image hosting system. Do not manually edit or delete files here.*
 `
