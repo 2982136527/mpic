@@ -87,14 +87,27 @@ export async function getFile(path: string, repo?: string): Promise<{ sha: strin
     sha?: string
     content?: string
     encoding?: string
+    download_url?: string
+    git_url?: string
   }>(env, endpoint, { allowStatuses: [404] })
 
   if (status === 404 || !data.sha) {
     return null
   }
 
-  const raw = (data.content || '').replace(/\n/g, '')
-  const content = Buffer.from(raw, 'base64').toString('utf8')
+  let content: string
+
+  if (data.content && data.encoding === 'base64') {
+    const raw = data.content.replace(/\n/g, '')
+    content = Buffer.from(raw, 'base64').toString('utf8')
+  } else if (data.git_url) {
+    content = await getLargeFileContentFromBlob(env, data.git_url)
+  } else if (data.download_url) {
+    content = await getLargeFileContentFromDownloadUrl(data.download_url)
+  } else {
+    throw new HttpError(500, 'GITHUB_FILE_READ_FAILED', `Failed to read ${path} from GitHub`)
+  }
+
   return { sha: data.sha, content }
 }
 
@@ -274,4 +287,49 @@ async function getPublicTextFile(path: string, repo?: string): Promise<string | 
       })
     }
   }
+}
+
+async function getLargeFileContentFromBlob(env: GithubRepoEnv, blobUrl: string): Promise<string> {
+  const response = await fetch(blobUrl, {
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${env.token}`,
+      'User-Agent': 'MPic',
+      'X-GitHub-Api-Version': '2022-11-28',
+    },
+    cache: 'no-store',
+  })
+
+  const text = await response.text()
+  const parsed = text ? (JSON.parse(text) as { content?: string; encoding?: string; message?: string }) : {}
+
+  if (!response.ok) {
+    throw new HttpError(
+      response.status,
+      'GITHUB_API_ERROR',
+      typeof parsed.message === 'string' ? parsed.message : `GitHub API error (${response.status})`,
+    )
+  }
+
+  if (parsed.content && parsed.encoding === 'base64') {
+    return Buffer.from(parsed.content.replace(/\n/g, ''), 'base64').toString('utf8')
+  }
+
+  throw new HttpError(500, 'GITHUB_FILE_READ_FAILED', 'GitHub blob response did not include base64 content')
+}
+
+async function getLargeFileContentFromDownloadUrl(downloadUrl: string): Promise<string> {
+  const response = await fetch(downloadUrl, {
+    headers: {
+      Accept: 'text/plain',
+      'User-Agent': 'MPic',
+    },
+    cache: 'no-store',
+  })
+
+  if (!response.ok) {
+    throw new HttpError(response.status, 'GITHUB_FILE_READ_FAILED', `Failed to download large file (${response.status})`)
+  }
+
+  return response.text()
 }
