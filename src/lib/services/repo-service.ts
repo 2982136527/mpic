@@ -1,5 +1,7 @@
 import { getJsonFile, getPublicJsonFile, updateJsonWithRetry, createRepo, getRepoSize } from '@/lib/github/client'
+import { encodeTextBase64, upsertFile, getFile } from '@/lib/github/client'
 import { getDefaultRepoName } from '@/lib/github/env'
+import { IMAGE_REPO_README } from '@/lib/services/repo-readme'
 
 const REPOS_INDEX_PATH = 'data/repos.json'
 const MAX_REPO_BYTES = 4 * 1024 * 1024 * 1024 // 4GB per repo (GitHub hard limit 5GB)
@@ -55,6 +57,8 @@ export async function getActiveRepo(): Promise<string> {
 
   try {
     await createRepo(newRepoName)
+    // Push a descriptive README to the new shard repo
+    await pushShardReadme(newRepoName).catch(() => {})
   } catch (err: unknown) {
     // If repo already exists, that's fine
     if (err instanceof Error && !err.message.includes('already exists')) {
@@ -69,6 +73,43 @@ export async function getActiveRepo(): Promise<string> {
   })
 
   return newRepoName
+}
+
+// Push (or update) a README to an image storage shard repo
+async function pushShardReadme(repoName: string): Promise<void> {
+  let sha: string | undefined
+  try {
+    const existing = await getFile('README.md', repoName)
+    if (existing) sha = existing.sha
+  } catch {
+    // File doesn't exist yet, create without sha
+  }
+
+  await upsertFile({
+    path: 'README.md',
+    contentBase64: encodeTextBase64(IMAGE_REPO_README),
+    message: 'docs: add MPic image storage shard README',
+    sha,
+    repo: repoName,
+  })
+}
+
+// Manually sync README to all existing shard repos (admin use)
+export async function syncAllShardReadmes(): Promise<{ synced: string[]; failed: string[] }> {
+  const index = await ensureReposIndex()
+  const synced: string[] = []
+  const failed: string[] = []
+
+  for (const entry of index.repos) {
+    try {
+      await pushShardReadme(entry.name)
+      synced.push(entry.name)
+    } catch {
+      failed.push(entry.name)
+    }
+  }
+
+  return { synced, failed }
 }
 
 // Update the tracked size of a repo after upload/delete
