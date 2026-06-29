@@ -43,7 +43,13 @@ export function isLikelyBot(request: Request): boolean {
   }
   if (browserHeaders >= 2) return false
 
-  // 3. UA doesn't look like a known browser and missing browser headers → likely bot
+  // 3. UA doesn't look like a browser and missing browser headers → likely bot
   const looksLikeBrowser = ua.includes('mozilla') || ua.includes('chrome') || ua.includes('safari') || ua.includes('firefox') || ua.includes('edge') || ua.includes('opera')
   return !looksLikeBrowser
+}
+
+export function getClientIp(request: Request): string {
+  return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || request.headers.get('x-real-ip')
+    || 'unknown'
 }

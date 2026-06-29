@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import { isAdminLogin } from '@/lib/api/permissions'
-import { isLikelyBot } from '@/lib/bot/detect'
+import { isLikelyBot, getClientIp } from '@/lib/bot/detect'
+import { isRateLimited } from '@/lib/bot/rate-limit'
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
@@ -39,6 +40,10 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api/auth')
   ) {
     if (isLikelyBot(request)) {
+      return NextResponse.json({ error: { code: 'BOT_DETECTED', message: 'Forbidden' } }, { status: 403 })
+    }
+    const ip = getClientIp(request)
+    if (isRateLimited(ip)) {
       return NextResponse.json({ error: { code: 'BOT_DETECTED', message: 'Forbidden' } }, { status: 403 })
     }
     return NextResponse.next()
