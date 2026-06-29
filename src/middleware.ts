@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import { isAdminLogin } from '@/lib/api/permissions'
+import { isLikelyBot } from '@/lib/bot/detect'
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
@@ -22,15 +23,24 @@ export async function middleware(request: NextRequest) {
 
   // Public APIs
   if (
-    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/cron/') ||
+    pathname.startsWith('/api/pixiv/proxy')
+  ) {
+    return NextResponse.next()
+  }
+
+  // Public APIs with bot detection
+  if (
     pathname.startsWith('/api/images') ||
     pathname.startsWith('/api/image/') ||
     pathname.startsWith('/api/random') ||
-    pathname.startsWith('/api/cron/') ||
     pathname.startsWith('/api/timeline') ||
     pathname.startsWith('/api/visit') ||
-    pathname.startsWith('/api/pixiv/proxy')
+    pathname.startsWith('/api/auth')
   ) {
+    if (isLikelyBot(request)) {
+      return NextResponse.json({ error: { code: 'BOT_DETECTED', message: 'Forbidden' } }, { status: 403 })
+    }
     return NextResponse.next()
   }
 
