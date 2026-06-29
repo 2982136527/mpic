@@ -1,4 +1,4 @@
-import { getJsonFile, updateJsonWithRetry } from '@/lib/github/client'
+import { getJsonFile, getPublicJsonFile, updateJsonWithRetry } from '@/lib/github/client'
 import { DEFAULT_CRAWL_CONFIG, type CrawlConfig, type CrawlSource, type CrawlLogEntry, type CrawlLogsIndex, type CrawlContinuationMonitor } from '@/types/crawl'
 import { getDefaultSources, mergeDefaultSources } from '@/lib/crawl/sources'
 import { fetchImages } from '@/lib/crawl/fetcher'
@@ -48,9 +48,9 @@ export async function updateCrawlContinuation(changes: Partial<CrawlContinuation
 }
 
 export async function getCrawlLogs(): Promise<CrawlLogEntry[]> {
-  const file = await getJsonFile<CrawlLogsIndex>(CRAWL_LOGS_PATH)
-  if (!file) return []
-  return file.data.logs.slice(0, 50)
+  const data = await getPublicJsonFile<CrawlLogsIndex>(CRAWL_LOGS_PATH)
+  if (!data) return []
+  return data.logs.slice(0, 50)
 }
 
 export async function runCrawl(force = false): Promise<{ fetched: number; duplicates: number; errors: number; shouldContinue: boolean }> {
