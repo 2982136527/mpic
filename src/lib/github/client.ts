@@ -4,6 +4,8 @@ import { HttpError } from '@/lib/api/errors'
 const API_BASE = 'https://api.github.com'
 const RAW_READ_TTL_MS = 15_000
 const RECENT_WRITE_TTL_MS = 20_000
+const RECENT_WRITE_SETTLE_MS = 400
+const CONFLICT_RETRY_BASE_MS = 500
 
 type CachedRawFile = {
   expiresAt: number
@@ -67,6 +69,10 @@ function hasRecentGithubWrite(key: string): boolean {
     return false
   }
   return true
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 async function githubRequestWithEnv<T>(env: GithubRepoEnv, endpoint: string, options: RequestOptions = {}): Promise<{ data: T; status: number }> {
@@ -203,10 +209,17 @@ export async function uploadBinary(path: string, buffer: Buffer, message: string
 export async function updateJsonWithRetry<T>(
   path: string,
   updater: (current: T) => T,
-  maxRetries = 3,
+  maxRetries = 5,
   repo?: string,
 ): Promise<void> {
+  const env = repo ? getGithubEnvForRepo(repo) : getImageGithubEnv()
+  const key = buildFileCacheKey(env, path)
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    if (attempt === 0 && hasRecentGithubWrite(key)) {
+      await sleep(RECENT_WRITE_SETTLE_MS)
+    }
+
     const file = await getJsonFile<T>(path, repo)
     const currentData = file ? file.data : undefined
     const sha = file?.sha
@@ -224,6 +237,9 @@ export async function updateJsonWithRetry<T>(
       return
     } catch (error) {
       if (error instanceof HttpError && error.status === 409 && attempt < maxRetries) {
+        const delay = CONFLICT_RETRY_BASE_MS * (attempt + 1)
+        console.warn(`[github] conflict updating ${path}, retry=${attempt + 1}/${maxRetries} delayMs=${delay}`)
+        await sleep(delay)
         continue
       }
       throw error
