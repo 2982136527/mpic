@@ -166,7 +166,7 @@ export function TimelineBar({ timeline, current, date }: Props) {
           className={`absolute left-0 top-full z-[60] mt-2 flex origin-top-left overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-white/95 shadow-xl backdrop-blur-xl ${calendar ? 'w-[36rem]' : 'w-auto'}`}
           style={{ animation: 'jelly-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' }}>
           {/* Left: month list */}
-          <div className='w-2/5 border-r border-[var(--color-border-strong)] p-1.5 overflow-y-auto max-h-80'>
+          <div className={`${calendar ? 'w-2/5' : 'w-auto'} border-r border-[var(--color-border-strong)] p-1.5 overflow-y-auto max-h-80`}>
             <button
               type='button'
               onClick={handleClear}
@@ -192,7 +192,7 @@ export function TimelineBar({ timeline, current, date }: Props) {
 
           {/* Right: calendar */}
           {calendar && (
-            <div className='w-3/5 p-4 overflow-y-auto max-h-80'>
+            <div className='w-3/5 flex-1 p-4 overflow-y-auto max-h-80'>
               <>
                 <div className='mb-3 text-sm font-semibold text-[var(--color-ink)]'>
                   {calendar.year}年{calendar.month}月
