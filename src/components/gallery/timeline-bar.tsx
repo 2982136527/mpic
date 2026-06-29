@@ -191,8 +191,8 @@ export function TimelineBar({ timeline, current, date }: Props) {
           </div>
 
           {/* Right: calendar */}
-          <div className='w-3/5 p-4 overflow-y-auto max-h-80'>
-            {calendar && (
+          {calendar && (
+            <div className='w-3/5 p-4 overflow-y-auto max-h-80'>
               <>
                 <div className='mb-3 text-sm font-semibold text-[var(--color-ink)]'>
                   {calendar.year}年{calendar.month}月
@@ -231,8 +231,8 @@ export function TimelineBar({ timeline, current, date }: Props) {
                   查看全部 {calendar.month} 月
                 </button>
               </>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </div>
