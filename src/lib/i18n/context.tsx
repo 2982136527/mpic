@@ -16,8 +16,8 @@ type I18nContextType = {
   animPhase: AnimPhase
 }
 
-const EXIT_DURATION = 180
-const ENTER_DURATION = 400
+const EXIT_DURATION = 350
+const ENTER_DURATION = 550
 
 const I18nContext = createContext<I18nContextType>({
   lang: 'zh',
