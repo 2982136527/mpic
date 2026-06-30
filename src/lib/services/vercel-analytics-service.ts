@@ -9,12 +9,12 @@ let _cachedCount: number | null = null
 let _cachedAt = 0
 const CACHE_TTL = 120_000 // 2 min cache
 
-export async function getPageViewCount(): Promise<number | null> {
+export async function getPageViewCount(): Promise<number> {
   const token = process.env.VERCEL_ANALYTICS_TOKEN
-  if (!token) return null
+  if (!token) return 0
 
   if (_cachedCount !== null && Date.now() - _cachedAt < CACHE_TTL) {
-    return _cachedCount
+    return _cachedCount ?? 0
   }
 
   const teamId = process.env.VERCEL_TEAM_ID || ''
@@ -29,13 +29,11 @@ export async function getPageViewCount(): Promise<number | null> {
     if (!res.ok) return null
 
     const data = await res.json() as VercelAnalyticsResponse
-    const count = data?.data?.total ?? null
-    if (count !== null) {
-      _cachedCount = count
-      _cachedAt = Date.now()
-    }
+    const count = data?.data?.total ?? 0
+    _cachedCount = count
+    _cachedAt = Date.now()
     return count
   } catch {
-    return _cachedCount
+    return _cachedCount ?? 0
   }
 }
