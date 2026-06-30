@@ -33,7 +33,7 @@ const en = {
 
   nav: {
     siteName: 'MPic',
-    siteDesc: 'Free ACG & Photo Hosting — Upload, share, and explore anime artwork, illustrations, and photography with Pixiv proxy support',
+    siteDesc: 'Free ACG Image Hosting — Pixiv proxy, EXIF data, public gallery',
     login: 'Login',
     dashboard: 'Dashboard',
     admin: 'Admin',

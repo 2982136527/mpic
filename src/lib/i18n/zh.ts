@@ -33,7 +33,7 @@ const zh = {
 
   nav: {
     siteName: 'MPic',
-    siteDesc: '免费二次元图床 — ACG 动漫图片、插画、摄影作品上传与分享，支持 Pixiv 代理',
+    siteDesc: '免费二次元图床 · Pixiv 代理 · EXIF 查看 · 公开画廊',
     login: '登录',
     dashboard: '个人中心',
     admin: '管理后台',
