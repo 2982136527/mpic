@@ -26,7 +26,7 @@ export async function getPageViewCount(): Promise<number> {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     })
-    if (!res.ok) return null
+    if (!res.ok) return 0
 
     const data = await res.json() as VercelAnalyticsResponse
     const count = data?.data?.total ?? 0
