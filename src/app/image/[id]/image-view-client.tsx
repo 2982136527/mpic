@@ -7,6 +7,7 @@ import { useLang } from '@/lib/i18n/context'
 import { getPreferredPublicImageSource } from '@/lib/image-links'
 import { formatBytes } from '@/lib/utils'
 import { GlassCard } from '@/components/ui/glass-card'
+import { SocialShare } from '@/components/gallery/social-share'
 
 type Props = {
   image: ImageRecord
@@ -152,6 +153,10 @@ export function ImageViewClient({ image, links, imageId, siteUrl, relatedImages 
           >
             Share
           </button>
+        </div>
+        <div className='mt-3 flex items-center gap-3'>
+          <span className='text-xs text-[var(--color-ink-soft)]'>Share on</span>
+          <SocialShare url={`${siteUrl}/image/${imageId}`} title={image.title || image.filename} />
         </div>
 
         {linkFormats.length > 0 && (

@@ -27,6 +27,7 @@ const en = {
     viewInGallery: 'Back to Gallery',
     linkFormats: 'Link formats',
     share: 'Share',
+    shareOn: 'Share on',
     deleting: 'Deleting',
     saved: 'Saved',
   },

@@ -27,6 +27,7 @@ const zh = {
     viewInGallery: '返回画廊',
     linkFormats: '链接格式',
     share: '分享',
+    shareOn: '分享到',
     deleting: '删除中',
     saved: '已保存',
   },

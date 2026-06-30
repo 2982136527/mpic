@@ -6,6 +6,7 @@ import { getImageSourceLabel } from '@/lib/image-source'
 import { getPublicImageSourceCandidates } from '@/lib/image-links'
 import { formatBytes } from '@/lib/utils'
 import { useLang } from '@/lib/i18n/context'
+import { SocialShare } from '@/components/gallery/social-share'
 
 type Props = {
   images: (ImageRecord & { links: ImageLinks })[]
@@ -248,6 +249,10 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
               className='rounded-lg bg-[var(--color-brand)] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[var(--color-brand-strong)]'>
               {copied === 'share' ? t.common.copied : t.common.share}
             </button>
+          </div>
+          <div className='mt-3 flex items-center gap-2'>
+            <span className='text-xs text-[var(--color-ink-soft)]'>{t.common?.shareOn || 'Share on'}</span>
+            <SocialShare url={`${window.location.origin}/image/${image.id}`} title={image.title || image.filename} />
           </div>
 
           <div className='mt-4 flex gap-2'>
