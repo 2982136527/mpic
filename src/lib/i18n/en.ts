@@ -33,7 +33,7 @@ const en = {
 
   nav: {
     siteName: 'MPic',
-    siteDesc: 'Public Image Hosting',
+    siteDesc: 'Free Image Hosting & Public Photo Gallery — Upload, share, and explore photos',
     login: 'Login',
     dashboard: 'Dashboard',
     admin: 'Admin',

@@ -74,10 +74,10 @@ export function ImageViewClient({ image, links, imageId, siteUrl }: Props) {
         </Link>
 
         <div className='mt-4'>
+          <h1 className='text-xl font-semibold'>{image.title || image.filename}</h1>
           {image.title && (
-            <h1 className='text-xl font-semibold'>{image.title}</h1>
+            <p className='mt-0.5 text-sm text-[var(--color-ink-soft)]'>{image.filename}</p>
           )}
-          <p className='mt-0.5 text-sm text-[var(--color-ink-soft)]'>{image.filename}</p>
         </div>
 
         <div className='mt-5 grid grid-cols-2 gap-x-8 gap-y-2 text-sm'>

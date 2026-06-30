@@ -1,6 +1,6 @@
 export const siteMeta = {
   name: 'MPic',
-  description: '多用户公开相册图床，基于 GitHub 存储',
+  description: 'MPic 免费公开图床 — 多用户图片上传、分享与相册托管。支持 Pixiv 代理、EXIF 信息查看，基于 GitHub 存储。',
 }
 
 export function getSiteUrl(): string {

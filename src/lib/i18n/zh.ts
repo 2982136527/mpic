@@ -33,7 +33,7 @@ const zh = {
 
   nav: {
     siteName: 'MPic',
-    siteDesc: '公开相册图床',
+    siteDesc: '免费公开图床 — 多用户图片上传、分享与相册托管',
     login: '登录',
     dashboard: '个人中心',
     admin: '管理后台',
