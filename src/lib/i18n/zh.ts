@@ -86,7 +86,6 @@ const zh = {
     welcomeTitle: '欢迎使用 MPic',
     welcomeDesc: '暂无图片，请登录后上传',
     detailPage: '详情页',
-    intro: '探索不断增长的二次元动漫插画、摄影作品与 ACG 图片集。上传分享你的创作，发现更多精彩作品。',
   },
 
   upload: {

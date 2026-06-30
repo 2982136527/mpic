@@ -89,7 +89,6 @@ const en = {
     welcomeTitle: 'Welcome to MPic',
     welcomeDesc: 'No images yet. Please log in to upload.',
     detailPage: 'Detail page',
-    intro: 'Explore a growing collection of anime artwork, illustrations, photography, and ACG images. Upload and share your own creations.',
   },
 
   upload: {
