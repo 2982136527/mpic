@@ -16,6 +16,7 @@ export async function middleware(request: NextRequest) {
   // Public pages
   if (
     pathname === '/' ||
+    pathname.startsWith('/image/') ||
     pathname.startsWith('/login')
   ) {
     return NextResponse.next()

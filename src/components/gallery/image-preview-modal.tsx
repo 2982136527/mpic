@@ -218,6 +218,31 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
             ))}
           </div>
 
+          <div className='mt-4 flex flex-wrap gap-2'>
+            <button
+              type='button'
+              onClick={async () => {
+                const pageUrl = `${window.location.origin}/image/${image.id}`
+                if (navigator.share) {
+                  try {
+                    await navigator.share({ title: image.title || image.filename, url: pageUrl })
+                  } catch {}
+                } else {
+                  await copyToClipboard(pageUrl, 'share')
+                }
+              }}
+              className='rounded-lg bg-[var(--color-brand)] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[var(--color-brand-strong)]'>
+              {copied === 'share' ? t.common.copied : t.common.share}
+            </button>
+            <a
+              href={`/image/${image.id}`}
+              target='_blank'
+              rel='noopener noreferrer'
+              className='rounded-lg border border-[var(--color-border-strong)] bg-white px-3 py-1.5 text-xs text-[var(--color-ink)] transition hover:border-[var(--color-brand)]'>
+              {t.common.viewInGallery}
+            </a>
+          </div>
+
           <div className='mt-4 flex gap-2'>
             {index > 0 && (
               <button type='button' onClick={() => onNavigate(index - 1)} className='rounded-lg border border-[var(--color-border-strong)] bg-white px-3 py-1.5 text-xs text-[var(--color-ink)] transition hover:border-[var(--color-brand)]'>

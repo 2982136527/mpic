@@ -21,6 +21,25 @@ export const metadata: Metadata = {
     shortcut: '/favicon.ico',
     apple: '/icon.svg',
   },
+  openGraph: {
+    type: 'website',
+    siteName: siteMeta.name,
+    title: siteMeta.name,
+    description: siteMeta.description,
+    url: getSiteUrl(),
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: siteMeta.name,
+    description: siteMeta.description,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: getSiteUrl(),
+  },
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
