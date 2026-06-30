@@ -9,8 +9,8 @@ import { Analytics } from '@vercel/analytics/next'
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
   title: {
-    default: siteMeta.name,
-    template: `%s | ${siteMeta.name}`,
+    default: 'MPic - Free ACG Image Hosting & Gallery',
+    template: `%s | MPic Image Hosting`,
   },
   description: siteMeta.description,
   icons: {
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: 'website',
-    siteName: siteMeta.name,
+    siteName: 'MPic Image Hosting',
     title: siteMeta.name,
     description: siteMeta.description,
     url: getSiteUrl(),
