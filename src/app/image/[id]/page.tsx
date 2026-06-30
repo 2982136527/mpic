@@ -24,11 +24,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = image.title || image.filename
 
   const parts: string[] = []
+  if (image.tags && image.tags.length > 0) {
+    parts.push(image.tags.join(', '))
+  }
   if (image.exif?.camera) {
     parts.push(`Shot with ${image.exif.camera}`)
     if (image.exif.lens) parts.push(`on ${image.exif.lens}`)
   }
-  parts.push(`Uploaded by ${image.uploaderLogin}`)
+  parts.push(`by ${image.uploaderLogin}`)
   const description = parts.join(' · ')
 
   const ogImage = imageUrl
@@ -78,6 +81,7 @@ export default async function ImagePage({ params }: Props) {
         name: pageTitle,
         description: `Image by ${image.uploaderLogin}`,
         uploadDate: image.createdAt,
+        ...(image.tags && image.tags.length > 0 ? { keywords: image.tags.join(', ') } : {}),
         ...(image.width && image.height ? { width: image.width, height: image.height } : {}),
       },
       {

@@ -199,12 +199,13 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
               <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>{t.gallery.tags}</p>
               <div className='mb-3 flex flex-wrap gap-1.5'>
                 {image.tags.map(tag => (
-                  <span
+                  <a
                     key={tag}
-                    className='rounded-full bg-[var(--color-brand)]/10 px-2 py-1 text-[11px] text-[var(--color-brand-strong)]'
+                    href={`/?search=${encodeURIComponent(tag)}`}
+                    className='rounded-full bg-[var(--color-brand)]/10 px-2 py-1 text-[11px] text-[var(--color-brand-strong)] transition hover:bg-[var(--color-brand)]/20'
                   >
                     #{tag}
-                  </span>
+                  </a>
                 ))}
               </div>
             </>

@@ -125,9 +125,13 @@ export function ImageViewClient({ image, links, imageId, siteUrl }: Props) {
         {image.tags && image.tags.length > 0 && (
           <div className='mt-4 flex flex-wrap gap-2'>
             {image.tags.map(tag => (
-              <span key={tag} className='rounded-full bg-[var(--glass-bg-strong)] px-2.5 py-0.5 text-xs text-[var(--color-ink-soft)]'>
+              <Link
+                key={tag}
+                href={`/?search=${encodeURIComponent(tag)}`}
+                className='rounded-full bg-[var(--glass-bg-strong)] px-2.5 py-0.5 text-xs text-[var(--color-ink-soft)] transition hover:text-[var(--color-brand)]'
+              >
                 #{tag}
-              </span>
+              </Link>
             ))}
           </div>
         )}
