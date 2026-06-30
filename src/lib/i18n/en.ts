@@ -33,7 +33,7 @@ const en = {
 
   nav: {
     siteName: 'MPic',
-    siteDesc: 'Free Image Hosting & Public Photo Gallery — Upload, share, and explore photos',
+    siteDesc: 'Free ACG & Photo Hosting — Upload, share, and explore anime artwork, illustrations, and photography with Pixiv proxy support',
     login: 'Login',
     dashboard: 'Dashboard',
     admin: 'Admin',
@@ -89,6 +89,7 @@ const en = {
     welcomeTitle: 'Welcome to MPic',
     welcomeDesc: 'No images yet. Please log in to upload.',
     detailPage: 'Detail page',
+    intro: 'Explore a growing collection of anime artwork, illustrations, photography, and ACG images. Upload and share your own creations.',
   },
 
   upload: {

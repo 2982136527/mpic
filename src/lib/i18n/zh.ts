@@ -33,7 +33,7 @@ const zh = {
 
   nav: {
     siteName: 'MPic',
-    siteDesc: '免费公开图床 — 多用户图片上传、分享与相册托管',
+    siteDesc: '免费二次元图床 — ACG 动漫图片、插画、摄影作品上传与分享，支持 Pixiv 代理',
     login: '登录',
     dashboard: '个人中心',
     admin: '管理后台',
@@ -86,6 +86,7 @@ const zh = {
     welcomeTitle: '欢迎使用 MPic',
     welcomeDesc: '暂无图片，请登录后上传',
     detailPage: '详情页',
+    intro: '探索不断增长的二次元动漫插画、摄影作品与 ACG 图片集。上传分享你的创作，发现更多精彩作品。',
   },
 
   upload: {

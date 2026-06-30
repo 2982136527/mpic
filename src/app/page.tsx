@@ -8,6 +8,7 @@ import { TimelineBar } from '@/components/gallery/timeline-bar'
 import { ExifFilters } from '@/components/gallery/exif-filters'
 import { GalleryContent } from '@/components/gallery/gallery-content'
 import { EmptyState } from '@/components/gallery/empty-state'
+import { GalleryIntro } from '@/components/gallery/gallery-intro'
 import { PublicVisitTracker } from '@/components/analytics/public-visit-tracker'
 import type { ImageRecord, ImageLinks } from '@/types/image'
 
@@ -60,6 +61,9 @@ export default async function HomePage({ searchParams }: PageProps) {
       <PublicVisitTracker />
 
       <main className='mx-auto w-full max-w-6xl px-5 sm:px-8'>
+        <Suspense fallback={null}>
+          <GalleryIntro />
+        </Suspense>
         <div className='mb-4 animate-fade-in-up'>
           <Suspense>
             <SearchBar />
