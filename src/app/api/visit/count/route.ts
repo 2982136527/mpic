@@ -1,13 +1,9 @@
 import { NextResponse } from 'next/server'
-import { getPageViewCount } from '@/lib/services/vercel-analytics-service'
+import { getVisitCount } from '@/lib/services/visit-counter-service'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  try {
-    const count = await getPageViewCount()
-    return NextResponse.json({ count })
-  } catch {
-    return NextResponse.json({ count: null })
-  }
+  const count = getVisitCount()
+  return NextResponse.json({ count })
 }
