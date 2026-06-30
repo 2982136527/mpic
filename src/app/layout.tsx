@@ -40,8 +40,8 @@ export const metadata: Metadata = {
   alternates: {
     canonical: getSiteUrl(),
   },
-  verification: {
-    msvalidate: '525052C84F95A119E421DF2C10F74CD1',
+  other: {
+    'msvalidate.01': '525052C84F95A119E421DF2C10F74CD1',
   },
 }
 
