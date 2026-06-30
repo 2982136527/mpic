@@ -1,7 +1,6 @@
 import { after, NextResponse, type NextRequest } from 'next/server'
 import { appendAccessLog } from '@/lib/services/access-log-service'
 import { createAccessLogEntry } from '@/lib/access-tracking'
-import { incrementVisitCounter } from '@/lib/services/visit-counter-service'
 
 export async function POST(request: NextRequest) {
   let path: string | undefined
@@ -14,7 +13,6 @@ export async function POST(request: NextRequest) {
   }
 
   after(async () => {
-    await incrementVisitCounter().catch(() => {})
     try {
       const entry = await createAccessLogEntry(request, {
         type: 'page_view',
