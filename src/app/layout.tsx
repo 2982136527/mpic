@@ -51,6 +51,26 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         </LangProvider>
         <SpeedInsights />
         <Analytics />
+        <script
+          type='application/ld+json'
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: siteMeta.name,
+              url: getSiteUrl(),
+              description: siteMeta.description,
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: {
+                  '@type': 'EntryPoint',
+                  urlTemplate: `${getSiteUrl()}/?search={search_term_string}`,
+                },
+                'query-input': 'required name=search_term_string',
+              },
+            }),
+          }}
+        />
       </body>
     </html>
   )

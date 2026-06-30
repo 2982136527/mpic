@@ -67,15 +67,27 @@ export default async function ImagePage({ params }: Props) {
   const links = buildImageLinks(image)
   const imageUrl = getPreferredPublicImageSource(links)
   const siteUrl = getSiteUrl()
+  const pageTitle = image.title || image.filename
 
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'ImageObject',
-    contentUrl: imageUrl,
-    name: image.title || image.filename,
-    description: `Image by ${image.uploaderLogin}`,
-    uploadDate: image.createdAt,
-    ...(image.width && image.height ? { width: image.width, height: image.height } : {}),
+    '@graph': [
+      {
+        '@type': 'ImageObject',
+        contentUrl: imageUrl,
+        name: pageTitle,
+        description: `Image by ${image.uploaderLogin}`,
+        uploadDate: image.createdAt,
+        ...(image.width && image.height ? { width: image.width, height: image.height } : {}),
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: siteMeta.name, item: siteUrl },
+          { '@type': 'ListItem', position: 2, name: pageTitle, item: `${siteUrl}/image/${id}` },
+        ],
+      },
+    ],
   }
 
   return (
