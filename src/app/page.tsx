@@ -11,11 +11,42 @@ import { EmptyState } from '@/components/gallery/empty-state'
 import { GalleryIntro } from '@/components/gallery/gallery-intro'
 import { PublicVisitTracker } from '@/components/analytics/public-visit-tracker'
 import type { ImageRecord, ImageLinks } from '@/types/image'
+import type { Metadata } from 'next'
+import { getSiteUrl, siteMeta } from '@/lib/site'
 
 type ImageWithLinks = ImageRecord & { links: ImageLinks }
 
 type PageProps = {
   searchParams: Promise<{ search?: string; page?: string; yearMonth?: string; date?: string; camera?: string; lens?: string }>
+}
+
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const params = await searchParams
+  const siteUrl = getSiteUrl()
+
+  if (params.search) {
+    return {
+      title: `${params.search}`,
+      description: `Browse images matching "${params.search}" on ${siteMeta.name} — free ACG image hosting and gallery.`,
+      alternates: { canonical: `${siteUrl}/?search=${encodeURIComponent(params.search)}` },
+    }
+  }
+  if (params.camera) {
+    const lens = params.lens ? ` with ${params.lens}` : ''
+    return {
+      title: `Shot with ${params.camera}${lens}`,
+      description: `Browse photos taken with ${params.camera}${lens} on ${siteMeta.name}.`,
+      alternates: { canonical: `${siteUrl}/?camera=${encodeURIComponent(params.camera)}${params.lens ? `&lens=${encodeURIComponent(params.lens)}` : ''}` },
+    }
+  }
+  if (params.yearMonth) {
+    return {
+      title: `${params.yearMonth}`,
+      description: `Browse images from ${params.yearMonth} on ${siteMeta.name}.`,
+      alternates: { canonical: `${siteUrl}/?yearMonth=${params.yearMonth}` },
+    }
+  }
+  return {}
 }
 
 export default async function HomePage({ searchParams }: PageProps) {

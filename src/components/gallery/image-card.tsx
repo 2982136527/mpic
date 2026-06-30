@@ -21,6 +21,9 @@ export function ImageCard({ image, onClick, priority = false }: Props) {
   const width = image.width || 4
   const height = image.height || 5
   const title = image.title || image.filename
+  const altText = image.title
+    ? [image.title, ...(image.tags || []).slice(0, 3), image.exif?.camera].filter(Boolean).join(' - ')
+    : image.filename
   const isPixiv = isPixivImageRecord(image)
   const sourceLabel = getImageSourceLabel(image.sourceProvider)
   const previewTags = image.tags?.slice(0, 3) || []
@@ -57,7 +60,7 @@ export function ImageCard({ image, onClick, priority = false }: Props) {
       <img
         ref={imageRef}
         src={currentSrc}
-        alt={title}
+        alt={altText}
         loading={priority ? 'eager' : 'lazy'}
         decoding='async'
         fetchPriority={priority ? 'high' : 'auto'}

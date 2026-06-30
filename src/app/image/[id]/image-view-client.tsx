@@ -56,7 +56,7 @@ export function ImageViewClient({ image, links, imageId, siteUrl }: Props) {
         {displayUrl && !imgError ? (
           <img
             src={displayUrl}
-            alt={image.title || image.filename}
+            alt={image.title || [image.tags?.join(', '), image.exif?.camera].filter(Boolean).join(' - ') || image.filename}
             className='mx-auto max-h-[70vh] w-full object-contain'
             onError={() => setImgError(true)}
           />
@@ -127,7 +127,7 @@ export function ImageViewClient({ image, links, imageId, siteUrl }: Props) {
             {image.tags.map(tag => (
               <Link
                 key={tag}
-                href={`/?search=${encodeURIComponent(tag)}`}
+                href={`/tag/${encodeURIComponent(tag)}`}
                 className='rounded-full bg-[var(--glass-bg-strong)] px-2.5 py-0.5 text-xs text-[var(--color-ink-soft)] transition hover:text-[var(--color-brand)]'
               >
                 #{tag}

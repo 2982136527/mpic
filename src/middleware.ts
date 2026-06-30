@@ -17,6 +17,7 @@ export async function middleware(request: NextRequest) {
   if (
     pathname === '/' ||
     pathname.startsWith('/image/') ||
+    pathname.startsWith('/tag/') ||
     pathname.startsWith('/login')
   ) {
     return NextResponse.next()

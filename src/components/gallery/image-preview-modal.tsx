@@ -201,7 +201,7 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
                 {image.tags.map(tag => (
                   <a
                     key={tag}
-                    href={`/?search=${encodeURIComponent(tag)}`}
+                    href={`/tag/${encodeURIComponent(tag)}`}
                     className='rounded-full bg-[var(--color-brand)]/10 px-2 py-1 text-[11px] text-[var(--color-brand-strong)] transition hover:bg-[var(--color-brand)]/20'
                   >
                     #{tag}
