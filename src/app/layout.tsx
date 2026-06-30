@@ -40,6 +40,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: getSiteUrl(),
   },
+  verification: {
+    msvalidate: '525052C84F95A119E421DF2C10F74CD1',
+  },
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
