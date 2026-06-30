@@ -119,22 +119,20 @@ export function ImagePreviewModal({ images, index, onNavigate, onClose }: Props)
           )}
 
           <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>{t.gallery.filename}</p>
-          <p className='mb-3 flex items-center gap-1.5 break-all text-sm text-[var(--color-ink)]'>
-            {image.filename}
-            <a
-              href={`/image/${image.id}`}
-              target='_blank'
-              rel='noopener noreferrer'
-              className='shrink-0 text-[var(--color-ink-soft)] transition hover:text-[var(--color-brand)]'
-              aria-label='Open image detail page'
-            >
-              <svg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'>
-                <path d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/>
-                <polyline points='15 3 21 3 21 9'/>
-                <line x1='10' y1='14' x2='21' y2='3'/>
-              </svg>
-            </a>
-          </p>
+          <p className='mb-1 break-all text-sm text-[var(--color-ink)]'>{image.filename}</p>
+          <a
+            href={`/image/${image.id}`}
+            target='_blank'
+            rel='noopener noreferrer'
+            className='mb-3 inline-flex items-center gap-1 text-xs text-[var(--color-brand)] transition hover:text-[var(--color-brand-strong)]'
+          >
+            {t.gallery.detailPage || 'Detail page'}
+            <svg width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2.5' strokeLinecap='round' strokeLinejoin='round'>
+              <path d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/>
+              <polyline points='15 3 21 3 21 9'/>
+              <line x1='10' y1='14' x2='21' y2='3'/>
+            </svg>
+          </a>
 
           <p className='mb-1 text-xs text-[var(--color-ink-soft)]'>{t.gallery.info}</p>
           <p className='mb-3 text-sm text-[var(--color-ink)]'>

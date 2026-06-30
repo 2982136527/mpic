@@ -85,6 +85,7 @@ const zh = {
     yearMonth: (year: string | number, month: string | number) => `${year}年${Number(month)}月`,
     welcomeTitle: '欢迎使用 MPic',
     welcomeDesc: '暂无图片，请登录后上传',
+    detailPage: '详情页',
   },
 
   upload: {
