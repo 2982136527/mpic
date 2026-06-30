@@ -1,13 +1,14 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { getImage } from '@/lib/services/image-service'
-import { buildImageLinks } from '@/lib/services/image-service'
+import { getImage, buildImageLinks } from '@/lib/services/image-service'
+import { listImages } from '@/lib/services/image-service'
 import { getPreferredPublicImageSource } from '@/lib/image-links'
 import { getSiteUrl, siteMeta } from '@/lib/site'
 import { BlurGradientBackground } from '@/components/background/blur-gradient-background'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { ImageViewClient } from './image-view-client'
+import type { ImageRecord, ImageLinks } from '@/types/image'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -72,6 +73,16 @@ export default async function ImagePage({ params }: Props) {
   const siteUrl = getSiteUrl()
   const pageTitle = image.title || image.filename
 
+  // Fetch recent images for crawlable cross-linking
+  let relatedImages: (ImageRecord & { links: ImageLinks })[] = []
+  try {
+    const result = await listImages({ pageSize: 7, publicOnly: true })
+    relatedImages = result.images
+      .filter(img => img.id !== id)
+      .slice(0, 6)
+      .map(img => ({ ...img, links: buildImageLinks(img) }))
+  } catch {}
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -100,7 +111,7 @@ export default async function ImagePage({ params }: Props) {
       <SiteHeader />
 
       <main className='mx-auto w-full max-w-5xl px-5 sm:px-8'>
-        <ImageViewClient image={image} links={links} imageId={id} siteUrl={siteUrl} />
+        <ImageViewClient image={image} links={links} imageId={id} siteUrl={siteUrl} relatedImages={relatedImages} />
       </main>
 
       <SiteFooter />

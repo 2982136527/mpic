@@ -13,9 +13,10 @@ type Props = {
   links: ImageLinks
   imageId: string
   siteUrl: string
+  relatedImages: (ImageRecord & { links: ImageLinks })[]
 }
 
-export function ImageViewClient({ image, links, imageId, siteUrl }: Props) {
+export function ImageViewClient({ image, links, imageId, siteUrl, relatedImages }: Props) {
   const { t } = useLang()
   const displayUrl = getPreferredPublicImageSource(links)
   const [imgError, setImgError] = useState(false)
@@ -178,6 +179,24 @@ export function ImageViewClient({ image, links, imageId, siteUrl }: Props) {
           </div>
         )}
       </GlassCard>
+
+      {relatedImages.length > 0 && (
+        <GlassCard>
+          <h2 className='text-sm font-semibold text-[var(--color-ink)]'>More images</h2>
+          <div className='mt-3 grid grid-cols-3 gap-3 sm:grid-cols-6'>
+            {relatedImages.map(rel => (
+              <Link key={rel.id} href={`/image/${rel.id}`} className='group block'>
+                <img
+                  src={getPreferredPublicImageSource(rel.links)}
+                  alt={rel.title || rel.filename}
+                  className='aspect-square w-full rounded-xl object-cover transition group-hover:opacity-80'
+                  loading='lazy'
+                />
+              </Link>
+            ))}
+          </div>
+        </GlassCard>
+      )}
     </div>
   )
 }

@@ -310,6 +310,24 @@ const zh = {
     enableAccessLog: '启用访问日志记录',
     enableImagesApi: '启用公开图片列表接口',
   },
+
+  about: {
+    title: '关于 MPic',
+    intro: 'MPic 是一个<strong>免费 ACG 图片托管与分享平台</strong>，为画师、摄影师和二次元爱好者打造。上传、分享和探索不断增长的插画、摄影与作品画廊。',
+    features: '功能特性',
+    featurePixiv: '<strong>Pixiv 代理</strong> — 自动代理 Pixiv 作品图片，无需离开画廊即可快速浏览。',
+    featureExif: '<strong>EXIF 信息</strong> — 查看上传照片的详细相机与镜头参数：快门速度、光圈、ISO、焦距等。',
+    featureGallery: '<strong>公开画廊</strong> — 每张上传的图片都会出现在精美的瀑布流画廊中。支持按相机、镜头、时间轴或标签搜索浏览。',
+    featureUpload: '<strong>便捷上传</strong> — 拖拽上传，超过 5 MB 自动压缩，支持 JPG、PNG、WebP、GIF。',
+    featureMulti: '<strong>多用户支持</strong> — 通过 GitHub 登录管理自己的图片集合，支持相册分类。',
+    featureOpen: '<strong>完全开源</strong> — 平台全部代码可在 GitHub 获取，支持自部署或参与贡献。',
+    forWho: '适合谁用？',
+    forWhoDesc: '展示作品的画师、分享 EXIF 信息的摄影师、收集整理的二次元爱好者 — 只要是需要一个快速、免费的公开图床平台的人。',
+    startTitle: '开始使用',
+    startDesc: '开始浏览画廊，或使用 GitHub 登录后上传你自己的图片。',
+    exploreGallery: '浏览画廊',
+    loginToUpload: '登录上传',
+  },
 }
 
 export default zh

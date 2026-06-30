@@ -313,6 +313,24 @@ const en = {
     enableAccessLog: 'Enable Access Logging',
     enableImagesApi: 'Enable Public Images API',
   },
+
+  about: {
+    title: 'About MPic',
+    intro: 'MPic is a <strong>free ACG image hosting and sharing platform</strong> built for artists, photographers, and anime enthusiasts. Upload, share, and explore a growing gallery of illustrations, photography, and artwork.',
+    features: 'Features',
+    featurePixiv: '<strong>Pixiv Proxy</strong> — Automatically proxy Pixiv artwork images for fast browsing without leaving the gallery.',
+    featureExif: '<strong>EXIF Data</strong> — View detailed camera and lens metadata for uploaded photos: shutter speed, aperture, ISO, focal length, and more.',
+    featureGallery: '<strong>Public Gallery</strong> — Every uploaded image is discoverable in a beautiful masonry gallery. Browse by camera, lens, timeline, or search by tags.',
+    featureUpload: '<strong>Easy Upload</strong> — Drag-and-drop upload with automatic compression for files over 5 MB. Supports JPG, PNG, WebP, and GIF.',
+    featureMulti: '<strong>Multi-User Support</strong> — Login via GitHub to manage your own image collection with album organization.',
+    featureOpen: '<strong>Fully Open Source</strong> — The entire platform code is available on GitHub. Self-host or contribute.',
+    forWho: 'Who is MPic for?',
+    forWhoDesc: 'Artists sharing their portfolio, photographers showcasing EXIF-rich shots, anime fans curating collections — anyone who needs a fast, free image hosting platform with a public gallery.',
+    startTitle: 'Get Started',
+    startDesc: 'Start exploring the gallery, or log in with GitHub to upload your own images.',
+    exploreGallery: 'Explore Gallery',
+    loginToUpload: 'Log In to Upload',
+  },
 }
 
 export default en
