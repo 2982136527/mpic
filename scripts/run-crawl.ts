@@ -1,6 +1,6 @@
 import { getCrawlConfig, runCrawl, updateCrawlContinuation } from '@/lib/services/crawl-service'
 
-const CONTINUATION_WINDOW_MS = 270_000
+const CONTINUATION_WINDOW_MS = 480_000
 const MIN_TIME_FOR_NEXT_BATCH_MS = 60_000
 const BETWEEN_BATCHES_MS = 1_500
 

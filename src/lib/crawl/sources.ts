@@ -2,13 +2,10 @@ import type { CrawlSource } from '@/types/crawl'
 
 const pixivRankingSources: CrawlSource[] = [
   { id: 'builtin_pixiv_daily_ranking', name: 'Pixiv日榜', url: 'https://www.pixiv.net/ranking.php?mode=daily&content=illust&format=json&p=1', category: 'anime', enabled: true, responseType: 'pixiv' },
-  { id: 'builtin_pixiv_daily_p2', name: 'Pixiv日榜-第2页', url: 'https://www.pixiv.net/ranking.php?mode=daily&content=illust&format=json&p=2', category: 'anime', enabled: true, responseType: 'pixiv' },
   { id: 'builtin_pixiv_weekly_ranking', name: 'Pixiv周榜', url: 'https://www.pixiv.net/ranking.php?mode=weekly&content=illust&format=json&p=1', category: 'anime', enabled: true, responseType: 'pixiv' },
-  { id: 'builtin_pixiv_weekly_p2', name: 'Pixiv周榜-第2页', url: 'https://www.pixiv.net/ranking.php?mode=weekly&content=illust&format=json&p=2', category: 'anime', enabled: true, responseType: 'pixiv' },
   { id: 'builtin_pixiv_monthly_ranking', name: 'Pixiv月榜', url: 'https://www.pixiv.net/ranking.php?mode=monthly&content=illust&format=json&p=1', category: 'anime', enabled: true, responseType: 'pixiv' },
   { id: 'builtin_pixiv_rookie_ranking', name: 'Pixiv新人榜', url: 'https://www.pixiv.net/ranking.php?mode=rookie&content=illust&format=json&p=1', category: 'anime', enabled: true, responseType: 'pixiv' },
   { id: 'builtin_pixiv_male_ranking', name: 'Pixiv男性人气', url: 'https://www.pixiv.net/ranking.php?mode=male&content=illust&format=json&p=1', category: 'anime', enabled: true, responseType: 'pixiv' },
-  { id: 'builtin_pixiv_female_ranking', name: 'Pixiv女性人气', url: 'https://www.pixiv.net/ranking.php?mode=female&content=illust&format=json&p=1', category: 'anime', enabled: true, responseType: 'pixiv' },
   { id: 'builtin_pixiv_top_rated', name: 'Pixiv高分精选', url: 'https://www.pixiv.net/ranking.php?mode=daily&content=illust&format=json&p=2', category: 'anime', enabled: true, responseType: 'pixiv' },
 ]
 

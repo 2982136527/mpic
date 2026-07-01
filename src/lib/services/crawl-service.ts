@@ -9,7 +9,7 @@ const CRAWL_LOGS_PATH = 'data/crawl-logs.json'
 const SYSTEM_LOGIN = 'system'
 const MAX_LOG_ENTRIES = 200
 const CONCURRENCY = 6
-const BATCH_SIZE = 20
+const BATCH_SIZE = 50
 
 function getBaseConfig(current?: CrawlConfig): CrawlConfig {
   const base = { ...DEFAULT_CRAWL_CONFIG, ...(current || {}) }
