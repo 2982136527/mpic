@@ -7,6 +7,13 @@ const BETWEEN_BATCHES_MS = 1_500
 async function main() {
   const force = process.argv.includes('--force')
   const configOnly = process.argv.includes('--config-only')
+
+  // Rate limit guard — skip if GitHub API quota is too low
+  if (!force && !await hasRemainingQuota(500)) {
+    console.log('[crawl] skipped — GitHub API rate limit too low')
+    return
+  }
+
   const config = await getCrawlConfig()
   const enabledSources = config.sources.filter(source => source.enabled).length
   const startedAt = new Date().toISOString()
@@ -100,6 +107,29 @@ async function main() {
 
 function wait(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+async function hasRemainingQuota(minRemaining = 500): Promise<boolean> {
+  try {
+    const response = await fetch('https://api.github.com/rate_limit', {
+      headers: {
+        Authorization: `Bearer ${process.env.IMAGE_GITHUB_TOKEN}`,
+        Accept: 'application/vnd.github+json',
+        'User-Agent': 'MPic',
+      },
+    })
+    if (!response.ok) return true
+    const data = await response.json() as { resources?: { core?: { remaining?: number; reset?: number } } }
+    const remaining = data?.resources?.core?.remaining
+    if (typeof remaining === 'number' && remaining < minRemaining) {
+      console.log(`[crawl] rate limit low: ${remaining} remaining, need ${minRemaining}`)
+      return false
+    }
+    console.log(`[crawl] rate limit OK: ${remaining ?? '?'} remaining`)
+    return true
+  } catch {
+    return true
+  }
 }
 
 main().catch(error => {
