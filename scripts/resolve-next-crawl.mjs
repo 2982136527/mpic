@@ -11,16 +11,16 @@ const {
 main().catch(error => {
   console.error('[crawl][chain] unexpected error', error)
   setOutput('enabled', 'unknown')
-  setOutput('should_dispatch', 'true')
+  setOutput('should_dispatch', 'false')
   setOutput('reason', 'unexpected_error')
   process.exitCode = 0
 })
 
 async function main() {
   if (!IMAGE_GITHUB_OWNER || !IMAGE_GITHUB_REPO || !IMAGE_GITHUB_TOKEN) {
-    console.warn('[crawl][chain] missing GitHub env, keep chain alive conservatively')
+    console.warn('[crawl][chain] missing GitHub env, stopping chain')
     setOutput('enabled', 'unknown')
-    setOutput('should_dispatch', 'true')
+    setOutput('should_dispatch', 'false')
     setOutput('reason', 'missing_env')
     return
   }
@@ -39,9 +39,9 @@ async function main() {
     )
 
     if (!response.ok) {
-      console.warn(`[crawl][chain] failed to read crawl-config status=${response.status}, keep chain alive`)
+      console.warn(`[crawl][chain] failed to read crawl-config status=${response.status}, stopping chain`)
       setOutput('enabled', 'unknown')
-      setOutput('should_dispatch', 'true')
+      setOutput('should_dispatch', 'false')
       setOutput('reason', `config_http_${response.status}`)
       return
     }
@@ -57,9 +57,9 @@ async function main() {
     setOutput('reason', enabled ? 'config_enabled' : 'config_disabled')
     console.log(`[crawl][chain] enabled=${enabled}`)
   } catch (error) {
-    console.warn('[crawl][chain] failed to resolve crawl config, keep chain alive', error)
+    console.warn('[crawl][chain] failed to resolve crawl config, stopping chain', error)
     setOutput('enabled', 'unknown')
-    setOutput('should_dispatch', 'true')
+    setOutput('should_dispatch', 'false')
     setOutput('reason', 'config_parse_failed')
   }
 }
