@@ -192,7 +192,9 @@ async function processSource(source: CrawlSource, batchSize: number): Promise<{ 
       } else {
         fetched++
       }
-    } catch {
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      if (errors < 3) console.warn(`[crawl] upload error: ${msg}`)
       errors++
     }
 
