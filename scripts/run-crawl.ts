@@ -9,7 +9,7 @@ async function main() {
   const configOnly = process.argv.includes('--config-only')
 
   // Rate limit guard — skip if GitHub API quota is too low
-  if (!force && !await hasRemainingQuota(500)) {
+  if (!force && !await hasRemainingQuota(200)) {
     console.log('[crawl] skipped — GitHub API rate limit too low')
     return
   }
