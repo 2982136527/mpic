@@ -10,7 +10,6 @@ const SYSTEM_LOGIN = 'system'
 const MAX_LOG_ENTRIES = 200
 const CONCURRENCY = 2
 const BATCH_SIZE = 50
-const BATCH_DELAY_MS = 200
 
 function getBaseConfig(current?: CrawlConfig): CrawlConfig {
   const base = { ...DEFAULT_CRAWL_CONFIG, ...(current || {}) }
@@ -197,9 +196,6 @@ async function processSource(source: CrawlSource, batchSize: number): Promise<{ 
       if (errors < 3) console.warn(`[crawl] upload error: ${msg}`)
       errors++
     }
-
-    // Throttle writes to reduce index conflicts across concurrent sources
-    await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS))
   }
 
   return { fetched, duplicates, errors }
