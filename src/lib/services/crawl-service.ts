@@ -9,7 +9,7 @@ const CRAWL_LOGS_PATH = 'data/crawl-logs.json'
 const SYSTEM_LOGIN = 'system'
 const MAX_LOG_ENTRIES = 200
 const CONCURRENCY = 6
-const BATCH_SIZE = 5
+const BATCH_SIZE = 20
 
 function getBaseConfig(current?: CrawlConfig): CrawlConfig {
   const base = { ...DEFAULT_CRAWL_CONFIG, ...(current || {}) }
@@ -119,8 +119,12 @@ export async function runCrawl(force = false): Promise<{ fetched: number; duplic
           duplicates += result.value.duplicates
           errors += result.value.errors
           sourceLogs.push({ name: source.name, ...result.value })
+          if (result.value.errors > 0) {
+            console.log(`[crawl] source=${source.name} fetched=${result.value.fetched} duplicates=${result.value.duplicates} errors=${result.value.errors}`)
+          }
         } else {
           errors++
+          console.warn(`[crawl] source=${source.name} failed: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`)
           sourceLogs.push({ name: source.name, fetched: 0, duplicates: 0, errors: 1 })
         }
       }
