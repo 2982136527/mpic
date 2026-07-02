@@ -2,7 +2,7 @@ name: Scheduled Crawl
 
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '7 */8 * * *'
   workflow_dispatch:
 
 concurrency:
