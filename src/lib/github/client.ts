@@ -251,19 +251,28 @@ export async function updateJsonWithRetry<T>(
 // Create a new GitHub repository via API
 export async function createRepo(repoName: string): Promise<void> {
   const env = getImageGithubEnv()
-  await githubRequestWithEnv<{ full_name?: string }>(
-    { ...env, repo: 'unused' },
-    `/user/repos`,
-    {
-      method: 'POST',
-      body: {
-        name: repoName,
-        private: false,
-        auto_init: true,
-        description: `mpic image storage shard`,
-      },
+
+  const response = await fetch(`https://api.github.com/user/repos`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${env.token}`,
+      'X-GitHub-Api-Version': '2022-11-28',
+      'Content-Type': 'application/json',
     },
-  )
+    body: JSON.stringify({
+      name: repoName,
+      private: false,
+      auto_init: true,
+      description: `mpic image storage shard`,
+    }),
+  })
+
+  if (!response.ok) {
+    const parsed = await response.json().catch(() => ({} as Record<string, unknown>))
+    const message = typeof parsed.message === 'string' ? parsed.message : `GitHub API error (${response.status})`
+    throw new HttpError(response.status, 'GITHUB_API_ERROR', message)
+  }
 }
 
 // Get repo info (size in KB)
